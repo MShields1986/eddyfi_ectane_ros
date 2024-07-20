@@ -4,16 +4,43 @@ project(eddyfi_ectane)
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
+option(ENABLE_CLANGTIDY "Run clang-tidy" OFF)
+
+if(ENABLE_CLANGTIDY)
+  find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
+  set(CLANG_TIDY_COMMAND "${CLANG_TIDY_EXE}" "-checks=-*,modernize-*")
+endif(ENABLE_CLANGTIDY)
+
+option(ENABLE_CPPCHECK "Run cppcheck" OFF)
+
+if(ENABLE_CPPCHECK)
+    find_program(cppcheck cppcheck)
+    message(STATUS "cppcheck                   ${cppcheck}")
+    if(NOT (cppcheck MATCHES "NOTFOUND"))
+        set(CMAKE_CXX_CPPCHECK "${cppcheck}"
+            "--enable=all"
+            "--inconclusive"
+            "--inline-suppr"
+            "--quiet"
+            "--suppress=unmatchedSuppression"
+            "--suppress=unusedFunction"
+            "--template='{file}:{line}: warning: {id} ({severity}): {message}'")
+    endif()
+endif(ENABLE_CPPCHECK)
+
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   message_generation
-  message_runtime
   roscpp
   std_msgs
   tf2
+  tf2_geometry_msgs
+  tf2_msgs
+  tf2_ros
   visualization_msgs
 )
 
@@ -74,7 +101,11 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   geometry_msgs#   std_msgs#   visualization_msgs
+#   geometry_msgs
+#   std_msgs
+#   visualization_msgs
+#   tf2_geometry_msgs
+#   tf2_msgs
 # )
 
 ################################################
@@ -107,9 +138,18 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES eddyfi_ectane
-#  CATKIN_DEPENDS geometry_msgs message_generation message_runtime roscpp std_msgs tf2 visualization_msgs
+  CATKIN_DEPENDS 
+    geometry_msgs 
+    message_runtime 
+    roscpp 
+    std_msgs 
+    tf2 
+    tf2_geometry_msgs
+    tf2_msgs
+    tf2_ros
+    visualization_msgs
 #  DEPENDS system_lib
 )
 
@@ -117,12 +157,34 @@ catkin_package(
 ## Build ##
 ###########
 
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
+
+set(OTHER_SRC_FILES
+     src/ectane_handler.cpp
+)
+
+set(EXECUTABLE_NAME ectane_node)
+set(EXECUTABLE_SRC src/ectane_node.cpp)
+
+add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SRC} ${OTHER_SRC_FILES})
+add_dependencies(${EXECUTABLE_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES})
+
+if(ENABLE_CLANGTIDY)
+  set_target_properties(${EXECUTABLE_NAME} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+endif(ENABLE_CLANGTIDY)
+
+
+################################################
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+#include_directories(
+# include
+#  ${catkin_INCLUDE_DIRS}
+#)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
