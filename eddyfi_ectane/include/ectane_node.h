@@ -1,5 +1,7 @@
 #pragma once
 
+#include <signal.h>
+
 #include <ros/ros.h>
 
 #include "ectane_handler.h"

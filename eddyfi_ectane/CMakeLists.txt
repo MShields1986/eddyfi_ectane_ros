@@ -4,6 +4,13 @@ project(eddyfi_ectane)
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
+# Compile as C++17 for compatibility with MinimalSocket library
+add_compile_options(-std=c++17)
+
+################################################
+##              Static  Analysis              ##
+################################################
+
 option(ENABLE_CLANGTIDY "Run clang-tidy" OFF)
 
 if(ENABLE_CLANGTIDY)
@@ -28,6 +35,26 @@ if(ENABLE_CPPCHECK)
     endif()
 endif(ENABLE_CPPCHECK)
 
+################################################
+##              Fetched Packages              ##
+################################################
+
+include(FetchContent)
+
+set(BUILD_MinimalCppSocket_SAMPLES OFF CACHE BOOL "" FORCE)
+
+# TODO: Consider forking repositories to avoid breaking changes if this lib works out
+FetchContent_Declare(
+  min_sock
+  GIT_REPOSITORY https://github.com/andreacasalino/Minimal-Socket
+  GIT_TAG        master
+)
+
+FetchContent_MakeAvailable(min_sock)
+
+################################################
+##            Catkin Find Packages            ##
+################################################
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -164,6 +191,7 @@ include_directories(
 
 set(OTHER_SRC_FILES
      src/ectane_handler.cpp
+     src/udp_connection.cpp
 )
 
 set(EXECUTABLE_NAME ectane_node)
@@ -171,7 +199,7 @@ set(EXECUTABLE_SRC src/ectane_node.cpp)
 
 add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SRC} ${OTHER_SRC_FILES})
 add_dependencies(${EXECUTABLE_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES})
+target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES} MinimalSocket)
 
 if(ENABLE_CLANGTIDY)
   set_target_properties(${EXECUTABLE_NAME} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
