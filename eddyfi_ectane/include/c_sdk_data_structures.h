@@ -1,6 +1,6 @@
 #pragma once
 
-// In line with Euan Fosters additions to InstDefsEctIris.h
+// In line with Euan Foster's additions to InstDefsEctIris.h
 // https://github.com/UoS-EEE-Automation/EctaneLabviewIntegration/blob/3bd3d2f49d6a7a6e077b98b8bf7a1289c4204995/C%20Programs/InstDefsEctIris.h#L1443
 
 enum State {
@@ -37,4 +37,29 @@ struct CommandPacket {
     float voltage_7;
     int32_t frequency_8;
     float voltage_8;
+};
+
+
+// In line with Euan Foster's Configurations.h
+// https://github.com/UoS-EEE-Automation/EctaneLabviewIntegration/blob/3bd3d2f49d6a7a6e077b98b8bf7a1289c4204995/C%20Programs/Configurations.h
+// case 0: //example
+// case 1: //HF Probe Axial - 1 Channel
+// case 2: //HF Probe Transversal - 1 Channel
+// case 3: //HF Probe Axial & Transversal - 1 Channel
+// case 4: //HF Probe Axial & Transversal - 4 Channels
+// case 5: //LF Probe Axial - 1 Channel
+// case 6: //LF Probe Transversal - 1 Channel
+// case 7: //LF Probe Axial & Transversal - 1 Channel
+// case 8: //LF Probe Axial & Transversal - 4 Channels
+
+enum Configurations {
+    example,
+    hf_probe_axial_1_channel,
+    hf_probe_transversal_1_channel,
+    hf_probe_axial_and_transversal_1_channel,
+    hf_probe_axial_and_transversal_4_channels,
+    lf_probe_axial_1_channel,
+    lf_probe_transversal_1_channel,
+    lf_probe_axial_and_transversal_1_channel,
+    lf_probe_axial_and_transversal_4_channels
 };

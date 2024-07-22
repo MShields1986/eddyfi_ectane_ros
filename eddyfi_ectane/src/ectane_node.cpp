@@ -1,5 +1,18 @@
 #include "ectane_node.h"
 
+/*
+enum Configurations {
+    example,
+    hf_probe_axial_1_channel,
+    hf_probe_transversal_1_channel,
+    hf_probe_axial_and_transversal_1_channel,
+    hf_probe_axial_and_transversal_4_channels,
+    lf_probe_axial_1_channel,
+    lf_probe_transversal_1_channel,
+    lf_probe_axial_and_transversal_1_channel,
+    lf_probe_axial_and_transversal_4_channels
+};
+*/
 
 EctaneNode::EctaneNode(bool* kill_now)
      : nh_(),
