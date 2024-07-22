@@ -112,11 +112,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  BalanceDevice.srv
+  StreamData.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -126,14 +126,14 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
+generate_messages(
 #   DEPENDENCIES
 #   geometry_msgs
 #   std_msgs
 #   visualization_msgs
 #   tf2_geometry_msgs
 #   tf2_msgs
-# )
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##

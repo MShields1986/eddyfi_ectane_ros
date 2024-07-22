@@ -2,16 +2,20 @@
 
 
 EctaneHandler::EctaneHandler()
-     : ectane_address_("192.168.2.39"),
+     : // Ectane
+       ectane_address_("192.168.2.39"),
 
+       // C SDK State Command Listener
        recipient_address_("127.0.0.1"), 
        send_port_(24010),
        sender_(recipient_address_, send_port_),
 
+       // C SDK Data Sender
        sender_address_("127.0.0.1"),
        receive_port_(24011),
        receiver_(sender_address_, receive_port_),
 
+       // Internal Representation of Command State
        state_(State::do_nothing),
        configuration_(Configurations::lf_probe_axial_1_channel),
        acquisition_rate_(40),
@@ -19,11 +23,11 @@ EctaneHandler::EctaneHandler()
        frequency_(1000),
        voltage_(1.0)
 {
-       populateCommandPacket();
+       updateCommandPacket();
 }
 
 
-void EctaneHandler::spinSender()
+void EctaneHandler::spinSenderTest()
 {
     std::string message_1("Hi!");
 
@@ -33,9 +37,9 @@ void EctaneHandler::spinSender()
 }
 
 
-void EctaneHandler::spinReceiver()
+void EctaneHandler::spinReceiverTest()
 {
-    std::string message_2(commandToString(command_packet_));
+    std::string message_2(command_string_);
 
     receiver_.send(message_2);
     std::string received_message_2 = receiver_.receive();
@@ -43,16 +47,16 @@ void EctaneHandler::spinReceiver()
 }
 
 
-void EctaneHandler::run()
+void EctaneHandler::runTest()
 {
-    std::thread sender_thread(&EctaneHandler::spinSender, this);
-    std::thread receiver_thread(&EctaneHandler::spinReceiver, this);
+    std::thread sender_thread(&EctaneHandler::spinSenderTest, this);
+    std::thread receiver_thread(&EctaneHandler::spinReceiverTest, this);
     sender_thread.join();
     receiver_thread.join();
 }
 
 
-void EctaneHandler::populateCommandPacket()
+void EctaneHandler::updateCommandPacket()
 {
     command_packet_.state = state_;
     // oarsome's post here:
@@ -78,43 +82,47 @@ void EctaneHandler::populateCommandPacket()
     command_packet_.voltage_7 = voltage_;
     command_packet_.frequency_8 = frequency_;
     command_packet_.voltage_8 = voltage_;
+
+    updateCommandString();
 }
 
 
-std::string EctaneHandler::commandToString(CommandPacket command)
+void EctaneHandler::updateCommandString()
 {
-    std::string str_command = //std::to_string((int32_t)command.state) + "," +
-                              std::to_string(command.state) + "," +
-                              command.ip_address + "," +
-                              std::to_string(command.configuration) + "," +
-                              std::to_string(command.acquisition_rate) + "," +
-                              std::to_string(command.gain) + "," +
-                              std::to_string(command.frequency_1) + "," +
-                              std::to_string((int32_t)command.voltage_1) + "," +
-                              std::to_string(command.frequency_2) + "," +
-                              std::to_string((int32_t)command.voltage_2) + "," +
-                              std::to_string(command.frequency_3) + "," +
-                              std::to_string((int32_t)command.voltage_3) + "," +
-                              std::to_string(command.frequency_4) + "," +
-                              std::to_string((int32_t)command.voltage_4) + "," +
-                              std::to_string(command.frequency_5) + "," +
-                              std::to_string((int32_t)command.voltage_5) + "," +
-                              std::to_string(command.frequency_6) + "," +
-                              std::to_string((int32_t)command.voltage_6) + "," +
-                              std::to_string(command.frequency_7) + "," +
-                              std::to_string((int32_t)command.voltage_7) + "," +
-                              std::to_string(command.frequency_8) + "," +
-                              std::to_string((int32_t)command.voltage_8);
-
-    return str_command;
+    command_string_ = //std::to_string((int32_t)command_packet_.state) + "," +
+                        std::to_string(command_packet_.state) + "," +
+                        command_packet_.ip_address + "," +
+                        std::to_string(command_packet_.configuration) + "," +
+                        std::to_string(command_packet_.acquisition_rate) + "," +
+                        std::to_string(command_packet_.gain) + "," +
+                        std::to_string(command_packet_.frequency_1) + "," +
+                        std::to_string((int32_t)command_packet_.voltage_1) + "," +
+                        std::to_string(command_packet_.frequency_2) + "," +
+                        std::to_string((int32_t)command_packet_.voltage_2) + "," +
+                        std::to_string(command_packet_.frequency_3) + "," +
+                        std::to_string((int32_t)command_packet_.voltage_3) + "," +
+                        std::to_string(command_packet_.frequency_4) + "," +
+                        std::to_string((int32_t)command_packet_.voltage_4) + "," +
+                        std::to_string(command_packet_.frequency_5) + "," +
+                        std::to_string((int32_t)command_packet_.voltage_5) + "," +
+                        std::to_string(command_packet_.frequency_6) + "," +
+                        std::to_string((int32_t)command_packet_.voltage_6) + "," +
+                        std::to_string(command_packet_.frequency_7) + "," +
+                        std::to_string((int32_t)command_packet_.voltage_7) + "," +
+                        std::to_string(command_packet_.frequency_8) + "," +
+                        std::to_string((int32_t)command_packet_.voltage_8);
 }
 
 
 void EctaneHandler::changeState(State state)
 {
     state_ = state;
-    populateCommandPacket();
-    commandToString(command_packet_);
+    updateCommandPacket();
+    std::cout << "Outgoing command string: " << command_string_ << std::endl;
+    sender_.send(command_string_);
+
+    std::string received_message_1 = sender_.receive();
+    std::cout << "Returning command string: " << received_message_1 << std::endl;
 }
 
 

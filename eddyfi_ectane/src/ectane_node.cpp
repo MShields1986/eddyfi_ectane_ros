@@ -22,7 +22,79 @@ EctaneNode::EctaneNode(bool* kill_now)
        ns_(ros::this_node::getNamespace()),
        ectane_handler_()
 {
+    initHardware();
+
+    balance_service_ = nh_.advertiseService("/balance_device", &EctaneNode::balanceDevice, this);
+    stream_service_ = nh_.advertiseService("/stream_data", &EctaneNode::streamData, this);
+
     ROS_INFO_STREAM(node_name_ << ": Initialised");
+}
+
+
+EctaneNode::~EctaneNode()
+{
+    ROS_INFO_STREAM(node_name_ << ": Shutting down...");
+    ectane_handler_.disconnectDevice();
+    ros::Duration(0.5).sleep();
+    ROS_INFO_STREAM(node_name_ << ": Shut down");
+}
+
+
+void EctaneNode::initHardware()
+{
+    ROS_INFO_STREAM(node_name_ << ": Initialising Ectane hardware...");
+    ectane_handler_.doNothing();
+    // TODO: Check to see if the C SDK handshakes to confirm state receipt
+    ros::Duration(0.5).sleep();
+    ectane_handler_.socketInitialise();
+    ros::Duration(0.5).sleep();
+    ectane_handler_.connecttoDevice();
+    ros::Duration(0.5).sleep();
+    ectane_handler_.setUpDevice();
+    ros::Duration(0.5).sleep();
+    ROS_INFO_STREAM(node_name_ << ": Ectane hardware initialised");
+}
+
+
+bool EctaneNode::balanceDevice(eddyfi_ectane::BalanceDevice::Request& request,
+                               eddyfi_ectane::BalanceDevice::Response& response)
+{
+    if (request.balance)
+    {
+        ROS_INFO_STREAM(node_name_ << ": Balancing device...");
+        ectane_handler_.balanceDevice();
+        // TODO: Check to see if the C SDK handshakes to confirm state receipt
+        response.success = true;
+        return true;
+    }
+    else
+    {
+        response.success = false;
+        return true;
+    }
+}
+
+
+bool EctaneNode::streamData(eddyfi_ectane::StreamData::Request& request,
+                            eddyfi_ectane::StreamData::Response& response)
+{
+    if (request.stream_data)
+    {
+        ROS_INFO_STREAM(node_name_ << ": Beginning data stream...");
+        ectane_handler_.acquireData();
+        // TODO: Check to see if the C SDK handshakes to confirm state receipt
+        response.success = true;
+        return true;
+    }
+    else
+    {
+        ROS_INFO_STREAM(node_name_ << ": Stopping data stream...");
+        ectane_handler_.stopData();
+        ectane_handler_.doNothing();
+        // TODO: Check to see if the C SDK handshakes to confirm state receipt
+        response.success = true;
+        return true;
+    }
 }
 
 
@@ -30,8 +102,6 @@ void EctaneNode::run()
 {
     while (ros::ok() and !*kill_now_)
     {
-        ectane_handler_.run();
-
         ROS_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
         ros::spinOnce();
         rate_.sleep();
