@@ -3,7 +3,7 @@
 
 EctaneHandler::EctaneHandler()
      : // Ectane
-       ectane_address_("192.168.2.39"),
+       ectane_address_("192.168.002.039"),
 
        // C SDK State Command Listener
        recipient_address_("127.0.0.1"), 
@@ -62,7 +62,7 @@ void EctaneHandler::updateCommandPacket()
     // oarsome's post here:
     //      https://stackoverflow.com/questions/1076714/max-length-for-client-ip-address
     // suggests IP address string encoding ::ffff:000.000.000.000
-    strcpy(command_packet_.ip_address, ("ffff::" + ectane_address_).c_str());
+    strcpy(command_packet_.ip_address, ("::ffff:" + ectane_address_).c_str());
     command_packet_.configuration = configuration_;
     command_packet_.acquisition_rate = acquisition_rate_;
     command_packet_.gain = gain_;
@@ -120,9 +120,6 @@ void EctaneHandler::changeState(State state)
     updateCommandPacket();
     std::cout << "Outgoing command string: " << command_string_ << std::endl;
     sender_.send(command_string_);
-
-    std::string received_message_1 = sender_.receive();
-    std::cout << "Returning command string: " << received_message_1 << std::endl;
 }
 
 

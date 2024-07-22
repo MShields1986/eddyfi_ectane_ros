@@ -4,6 +4,9 @@
 
 #include <ros/ros.h>
 
+// TODO: Remove Twist once custom message is made
+#include <geometry_msgs/Twist.h>
+
 #include "ectane_handler.h"
 #include "eddyfi_ectane/BalanceDevice.h"
 #include "eddyfi_ectane/StreamData.h"
@@ -30,7 +33,8 @@ private:
     std::string                 node_name_;
     std::string                 ns_;
 
-    
+    ros::Publisher              publisher_;
+
     ros::ServiceServer          balance_service_;
     ros::ServiceServer          stream_service_;
 

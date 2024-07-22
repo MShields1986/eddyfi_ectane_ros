@@ -28,6 +28,8 @@ public:
     void                            stopData();
     void                            disconnectDevice();
 
+    const State                     &state() const { return state_; };
+
 private:
     void                            updateCommandPacket();
     void                            updateCommandString();

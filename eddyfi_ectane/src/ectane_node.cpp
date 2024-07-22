@@ -16,16 +16,20 @@ enum Configurations {
 
 EctaneNode::EctaneNode(bool* kill_now)
      : nh_(),
-       rate_(1),
+       rate_(20),
        kill_now_(kill_now),
        node_name_(ros::this_node::getName()),
        ns_(ros::this_node::getNamespace()),
-       ectane_handler_()
+       ectane_handler_(
+       // TODO: Add configs here
+        )
 {
     initHardware();
 
-    balance_service_ = nh_.advertiseService("/balance_device", &EctaneNode::balanceDevice, this);
-    stream_service_ = nh_.advertiseService("/stream_data", &EctaneNode::streamData, this);
+    publisher_ = nh_.advertise<geometry_msgs::Twist>(ns_ + "/eddy_current_data", 100, true);
+
+    balance_service_ = nh_.advertiseService(ns_ + "/balance_device", &EctaneNode::balanceDevice, this);
+    stream_service_ = nh_.advertiseService(ns_ + "/stream_data", &EctaneNode::streamData, this);
 
     ROS_INFO_STREAM(node_name_ << ": Initialised");
 }
@@ -35,6 +39,7 @@ EctaneNode::~EctaneNode()
 {
     ROS_INFO_STREAM(node_name_ << ": Shutting down...");
     ectane_handler_.disconnectDevice();
+    // TODO: Check to see if the C SDK handshakes to confirm state receipt
     ros::Duration(0.5).sleep();
     ROS_INFO_STREAM(node_name_ << ": Shut down");
 }
@@ -47,10 +52,13 @@ void EctaneNode::initHardware()
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
     ros::Duration(0.5).sleep();
     ectane_handler_.socketInitialise();
+    // TODO: Check to see if the C SDK handshakes to confirm state receipt
     ros::Duration(0.5).sleep();
     ectane_handler_.connecttoDevice();
+    // TODO: Check to see if the C SDK handshakes to confirm state receipt
     ros::Duration(0.5).sleep();
     ectane_handler_.setUpDevice();
+    // TODO: Check to see if the C SDK handshakes to confirm state receipt
     ros::Duration(0.5).sleep();
     ROS_INFO_STREAM(node_name_ << ": Ectane hardware initialised");
 }
@@ -102,11 +110,32 @@ void EctaneNode::run()
 {
     while (ros::ok() and !*kill_now_)
     {
+        if (ectane_handler_.state() == State::acquire_data)
+        {
+            ROS_INFO_STREAM_THROTTLE(10, node_name_ << ": Streaming data...");
+            geometry_msgs::Twist msg;
+            publisher_.publish(msg);
+        }
+
         ROS_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
         ros::spinOnce();
         rate_.sleep();
     }
 }
+
+
+/*
+template <typename ParamType>
+void EctaneNode::paramHandler(std::string param_name, ParamType& param_value)
+{
+    while (!nh_.hasParam(param_name) and !*kill_now_)
+    {
+        ROS_INFO_STREAM_THROTTLE(10, node_name_ << ": Waiting for parameter " << param_name);
+    }
+    nh_.getParam(param_name, param_value);
+    ROS_INFO_STREAM(node_name_ << ": Read in parameter " << param_name << " = " << param_value);
+}
+*/
 
 
 // Signal handling
