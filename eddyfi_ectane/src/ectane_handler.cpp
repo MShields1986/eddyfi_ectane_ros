@@ -30,11 +30,11 @@ EctaneHandler::EctaneHandler()
 
 void EctaneHandler::readData()
 {
-    std::string test("test_data");
-    receiver_.send(test);
+    std::string test("test_data"); // TODO: Remove in the final version
+    receiver_.send(test); // TODO: Remove in the final version
 
     ec_data_ = receiver_.receive();
-    std::cout << "Received EC data: " << *ec_data_ptr_ << std::endl;
+    std::cout << "Received EC data: " << *ec_data_ptr_ << std::endl; // TODO: Remove in the final version
 }
 
 
@@ -71,6 +71,11 @@ void EctaneHandler::updateCommandPacket()
 
 void EctaneHandler::updateCommandString()
 {
+    // TODO: I think I am getting UB when going from a char to a string which shows as a buffer overflow 
+    //       when compiling in Release mode
+    // https://stackoverflow.com/questions/66074911/undefined-behavior-when-converting-char-to-stdstring-c
+    // https://stackoverflow.com/questions/20794832/pointers-and-strings-c
+
     command_string_ = //std::to_string((int32_t)command_packet_.state) + "," +
                         std::to_string(command_packet_.state) + "," +
                         command_packet_.ip_address + "," +
