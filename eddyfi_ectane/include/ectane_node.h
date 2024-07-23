@@ -4,8 +4,12 @@
 
 #include <ros/ros.h>
 
-// TODO: Remove Twist once custom message is made
-#include <geometry_msgs/Twist.h>
+#include <std_msgs/Header.h>
+
+#include "eddyfi_ectane/Observation.h"
+#include "eddyfi_ectane/TimeSlot.h"
+#include "eddyfi_ectane/Channel.h"
+#include "eddyfi_ectane/Frequency.h"
 
 #include "ectane_handler.h"
 #include "eddyfi_ectane/BalanceDevice.h"
@@ -26,6 +30,7 @@ private:
                                               eddyfi_ectane::BalanceDevice::Response& response);
     bool                        streamData(eddyfi_ectane::StreamData::Request& request,
                                            eddyfi_ectane::StreamData::Response& response);
+    void                        populateEcData();
 
     ros::NodeHandle             nh_;
     ros::Rate                   rate_;
@@ -40,4 +45,5 @@ private:
 
     EctaneHandler               ectane_handler_;
     const std::string*          ec_data_ptr_;
+    eddyfi_ectane::Observation  ec_data_;
 };

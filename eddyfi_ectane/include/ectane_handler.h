@@ -15,10 +15,6 @@ class EctaneHandler
 {
 public:
     explicit EctaneHandler();
-    void                            spinSenderTest();
-    void                            spinReceiverTest();
-    void                            runTest();
-
     void                            readData();
 
     void                            doNothing();

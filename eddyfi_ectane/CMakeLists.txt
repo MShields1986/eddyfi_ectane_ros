@@ -105,11 +105,13 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  Frequency.msg
+  Channel.msg
+  TimeSlot.msg
+  Observation.msg
+)
 
 ## Generate services in the 'srv' folder
 add_service_files(
@@ -127,9 +129,9 @@ add_service_files(
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
-#   DEPENDENCIES
+  DEPENDENCIES
 #   geometry_msgs
-#   std_msgs
+  std_msgs
 #   visualization_msgs
 #   tf2_geometry_msgs
 #   tf2_msgs

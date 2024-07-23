@@ -28,7 +28,7 @@ EctaneNode::EctaneNode(bool* kill_now)
 {
     initHardware();
 
-    publisher_ = nh_.advertise<geometry_msgs::Twist>(ns_ + "/eddy_current_data", 100, true);
+    publisher_ = nh_.advertise<eddyfi_ectane::Observation>(ns_ + "/eddy_current_data", 100, true);
 
     balance_service_ = nh_.advertiseService(ns_ + "/balance_device", &EctaneNode::balanceDevice, this);
     stream_service_ = nh_.advertiseService(ns_ + "/stream_data", &EctaneNode::streamData, this);
@@ -37,6 +37,7 @@ EctaneNode::EctaneNode(bool* kill_now)
 }
 
 
+// TODO: Consider moving this into the ectane_handler
 EctaneNode::~EctaneNode()
 {
     ROS_INFO_STREAM(node_name_ << ": Shutting down...");
@@ -108,19 +109,46 @@ bool EctaneNode::streamData(eddyfi_ectane::StreamData::Request& request,
 }
 
 
+void EctaneNode::populateEcData()
+{
+    ec_data_.header.frame_id = ns_;
+    ec_data_.header.stamp = ros::Time::now();
+
+    for (int n_timeslot = 0; n_timeslot < 32; ++n_timeslot) {
+        eddyfi_ectane::TimeSlot time_slot = eddyfi_ectane::TimeSlot();
+        for (int n_channel = 0; n_channel < 8; ++n_channel) {
+            eddyfi_ectane::Channel channel = eddyfi_ectane::Channel();
+            // TODO: channel.dc_voltage = ;
+            for (int n_freq = 0; n_freq < 8; ++n_freq) {
+                eddyfi_ectane::Frequency freq = eddyfi_ectane::Frequency();
+                // TODO: freq.imaginary = ;
+                // TODO: freq.real = ;
+                channel.frequencies[n_freq] = freq;
+            }
+        time_slot.channels[n_channel] = channel;
+        }
+    ec_data_.time_slots[n_timeslot] = time_slot;
+    }
+
+}
+
 void EctaneNode::run()
 {
     while (ros::ok() and !*kill_now_)
     {
-        if (ectane_handler_.state() == State::acquire_data)
+        //if (ectane_handler_.state() == State::acquire_data)
+        while (ectane_handler_.state() == State::acquire_data)
         {
             ROS_INFO_STREAM_THROTTLE(10, node_name_ << ": Streaming data...");
+
             ectane_handler_.readData();
-            ROS_INFO_STREAM(node_name_ << ": Data: " << *ec_data_ptr_);
+            ROS_INFO_STREAM(node_name_ << ": Data: " << *ec_data_ptr_); // TODO: Drop this in the final version
             
-            // TODO: Define custom message for EC data and parse string to message type here
-            geometry_msgs::Twist msg;
-            publisher_.publish(msg);
+            //populateEcData();
+            publisher_.publish(ec_data_);
+
+            ros::spinOnce();
+            // No rate.sleep here as the data stream may be at a different rate to the node
         }
 
         ROS_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
