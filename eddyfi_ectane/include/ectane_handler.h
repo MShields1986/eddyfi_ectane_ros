@@ -19,6 +19,8 @@ public:
     void                            spinReceiverTest();
     void                            runTest();
 
+    void                            readData();
+
     void                            doNothing();
     void                            socketInitialise();
     void                            connecttoDevice();
@@ -27,8 +29,6 @@ public:
     void                            acquireData();
     void                            stopData();
     void                            disconnectDevice();
-
-    const State                     &state() const { return state_; };
 
 private:
     void                            updateCommandPacket();
@@ -39,7 +39,12 @@ private:
 
     // Ectane
     std::string                     ectane_address_;
+    std::string                     ec_data_;
+    std::string*                    ec_data_ptr_;
+public:
+    const std::string*              ec_data_ptr() const { return ec_data_ptr_; };
 
+private:
     // C SDK State Command Listener
     std::string                     recipient_address_;
     MinimalSocket::Port             send_port_;
@@ -52,6 +57,10 @@ private:
 
     // Internal Representation of Command State
     State                           state_;
+public:
+    const State                     &state() const { return state_; };
+
+private:
     Configurations                  configuration_;
     int32_t                         acquisition_rate_;
     int32_t                         gain_;

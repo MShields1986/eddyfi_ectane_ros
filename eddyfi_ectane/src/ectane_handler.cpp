@@ -4,6 +4,7 @@
 EctaneHandler::EctaneHandler()
      : // Ectane
        ectane_address_("192.168.002.039"),
+       ec_data_(""), ec_data_ptr_(&ec_data_),
 
        // C SDK State Command Listener
        recipient_address_("127.0.0.1"), 
@@ -27,32 +28,13 @@ EctaneHandler::EctaneHandler()
 }
 
 
-void EctaneHandler::spinSenderTest()
+void EctaneHandler::readData()
 {
-    std::string message_1("Hi!");
+    std::string test("test_data");
+    receiver_.send(test);
 
-    sender_.send(message_1);
-    std::string received_message_1 = sender_.receive();
-    std::cout << "Received message: " << received_message_1 << std::endl;
-}
-
-
-void EctaneHandler::spinReceiverTest()
-{
-    std::string message_2(command_string_);
-
-    receiver_.send(message_2);
-    std::string received_message_2 = receiver_.receive();
-    std::cout << "Received message: " << received_message_2 << std::endl;
-}
-
-
-void EctaneHandler::runTest()
-{
-    std::thread sender_thread(&EctaneHandler::spinSenderTest, this);
-    std::thread receiver_thread(&EctaneHandler::spinReceiverTest, this);
-    sender_thread.join();
-    receiver_thread.join();
+    ec_data_ = receiver_.receive();
+    std::cout << "Received EC data: " << *ec_data_ptr_ << std::endl;
 }
 
 

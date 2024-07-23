@@ -22,7 +22,9 @@ EctaneNode::EctaneNode(bool* kill_now)
        ns_(ros::this_node::getNamespace()),
        ectane_handler_(
        // TODO: Add configs here
-        )
+        ),
+       ec_data_ptr_(ectane_handler_.ec_data_ptr())
+
 {
     initHardware();
 
@@ -113,6 +115,10 @@ void EctaneNode::run()
         if (ectane_handler_.state() == State::acquire_data)
         {
             ROS_INFO_STREAM_THROTTLE(10, node_name_ << ": Streaming data...");
+            ectane_handler_.readData();
+            ROS_INFO_STREAM(node_name_ << ": Data: " << *ec_data_ptr_);
+            
+            // TODO: Define custom message for EC data and parse string to message type here
             geometry_msgs::Twist msg;
             publisher_.publish(msg);
         }

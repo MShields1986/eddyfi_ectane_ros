@@ -39,5 +39,5 @@ private:
     ros::ServiceServer          stream_service_;
 
     EctaneHandler               ectane_handler_;
-    //ros::Publisher              publisher_;
+    const std::string*          ec_data_ptr_;
 };

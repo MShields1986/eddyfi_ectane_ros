@@ -20,9 +20,9 @@ private:
     std::size_t receive_message_max_size_;
 
     // TODO: Evaluate blocking vs. non-blocking
-    MinimalSocket::udp::Udp<true> socket_;   // Blocking
-    // MinimalSocket::udp::Udp<false> socket_;   // Non-blocking
-    MinimalSocket::udp::UdpConnected<true> connected_socket_;   // Blocking
-    // MinimalSocket::udp::UdpConnected<false> connected_socket_(socket_.connect(address_));   // Non-blocking
+    MinimalSocket::udp::Udp<true> socket_;                          // Blocking
+    // MinimalSocket::udp::Udp<false> socket_;                      // Non-blocking
+    MinimalSocket::udp::UdpConnected<true> connected_socket_;       // Blocking
+    // MinimalSocket::udp::UdpConnected<false> connected_socket_;   // Non-blocking
 
 };
