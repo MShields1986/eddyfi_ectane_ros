@@ -40,11 +40,14 @@ void EctaneHandler::readData()
 
 void EctaneHandler::updateCommandPacket()
 {
+    std::cout << "Ectane address: " << ectane_address_ << std::endl;
     command_packet_.state = state_;
     // oarsome's post here:
     //      https://stackoverflow.com/questions/1076714/max-length-for-client-ip-address
     // suggests IP address string encoding ::ffff:000.000.000.000
-    strcpy(command_packet_.ip_address, ("::ffff:" + ectane_address_).c_str());
+    //strcpy(command_packet_.ip_address, ("::ffff:" + ectane_address_ + "\0").c_str()); // Buffer overflow
+    //strcpy(command_packet_.ip_address, (":ffff:" + ectane_address_ + "\0").c_str()); // OK
+    strcpy(command_packet_.ip_address, ("ffff:" + ectane_address_ + "\0").c_str()); // OK
     command_packet_.configuration = configuration_;
     command_packet_.acquisition_rate = acquisition_rate_;
     command_packet_.gain = gain_;
