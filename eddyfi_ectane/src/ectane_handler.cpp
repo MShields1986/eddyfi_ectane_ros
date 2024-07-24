@@ -3,7 +3,7 @@
 
 EctaneHandler::EctaneHandler()
      : // Ectane
-       ectane_address_("192.168.002.039"),
+       ectane_address_("192.168.002.035"),
        ec_data_(""), ec_data_ptr_(&ec_data_),
 
        // C SDK State Command Listener
