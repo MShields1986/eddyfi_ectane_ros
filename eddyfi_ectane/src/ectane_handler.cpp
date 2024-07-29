@@ -30,8 +30,8 @@ EctaneHandler::EctaneHandler()
 
 
 void EctaneHandler::readData() {
-    std::string test("test_data"); // TODO: Remove in the final version
-    receiver_.send(test); // TODO: Remove in the final version
+    //std::string test("test_data"); // TODO: Remove in the final version
+    //receiver_.send(test); // TODO: Remove in the final version
 
     ec_data_ = receiver_.receive();
     std::cout << "Received EC data: " << *ec_data_ptr_ << std::endl; // TODO: Remove in the final version
@@ -39,7 +39,6 @@ void EctaneHandler::readData() {
 
 
 void EctaneHandler::updateCommandPacket() {
-    std::cout << "Ectane address: " << ectane_address_ << std::endl;
     command_packet_.state = state_;
     // oarsome's post here:
     //      https://stackoverflow.com/questions/1076714/max-length-for-client-ip-address

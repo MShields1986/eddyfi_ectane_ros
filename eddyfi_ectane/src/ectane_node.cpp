@@ -137,6 +137,7 @@ void EctaneNode::run() {
 
             ros::spinOnce();
             // No rate.sleep here as the data stream may be at a different rate to the node
+            // rate_.sleep();
         }
 
         ROS_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
