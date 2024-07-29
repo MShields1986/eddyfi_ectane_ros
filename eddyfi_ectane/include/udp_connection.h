@@ -4,9 +4,7 @@
 #include <string>
 #include <MinimalSocket/udp/UdpSocket.h>
 
-
-class UdpConnection
-{
+class UdpConnection {
 public:
     UdpConnection(std::string ip_address, MinimalSocket::Port port);
     void send(std::string& message);

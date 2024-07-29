@@ -193,6 +193,7 @@ include_directories(
 
 set(OTHER_SRC_FILES
      src/ectane_handler.cpp
+     src/tcp_connection.cpp
      src/udp_connection.cpp
 )
 

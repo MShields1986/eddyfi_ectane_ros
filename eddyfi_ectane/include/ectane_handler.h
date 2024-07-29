@@ -8,6 +8,7 @@
 #include <MinimalSocket/udp/UdpSocket.h>
 
 #include "c_sdk_data_structures.h"
+#include "tcp_connection.h"
 #include "udp_connection.h"
 
 
@@ -44,7 +45,7 @@ private:
     // C SDK State Command Listener
     std::string                     recipient_address_;
     MinimalSocket::Port             send_port_;
-    UdpConnection                   sender_;
+    TcpConnection                   sender_;
 
     // C SDK Data Sender
     std::string                     sender_address_;

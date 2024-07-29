@@ -4,6 +4,7 @@
 EctaneHandler::EctaneHandler()
      : // Ectane
        ectane_address_("192.168.002.035"),
+       //ectane_address_("127.000.000.001"),
        ec_data_(""), ec_data_ptr_(&ec_data_),
 
        // C SDK State Command Listener
@@ -24,12 +25,11 @@ EctaneHandler::EctaneHandler()
        frequency_(1000),
        voltage_(1.0)
 {
-       updateCommandPacket();
+    updateCommandPacket();
 }
 
 
-void EctaneHandler::readData()
-{
+void EctaneHandler::readData() {
     std::string test("test_data"); // TODO: Remove in the final version
     receiver_.send(test); // TODO: Remove in the final version
 
@@ -38,8 +38,7 @@ void EctaneHandler::readData()
 }
 
 
-void EctaneHandler::updateCommandPacket()
-{
+void EctaneHandler::updateCommandPacket() {
     std::cout << "Ectane address: " << ectane_address_ << std::endl;
     command_packet_.state = state_;
     // oarsome's post here:
@@ -72,8 +71,7 @@ void EctaneHandler::updateCommandPacket()
 }
 
 
-void EctaneHandler::updateCommandString()
-{
+void EctaneHandler::updateCommandString() {
     // TODO: I think I am getting UB when going from a char to a string which shows as a buffer overflow 
     //       when compiling in Release mode
     // https://stackoverflow.com/questions/66074911/undefined-behavior-when-converting-char-to-stdstring-c
@@ -104,8 +102,7 @@ void EctaneHandler::updateCommandString()
 }
 
 
-void EctaneHandler::changeState(State state)
-{
+void EctaneHandler::changeState(State state) {
     state_ = state;
     updateCommandPacket();
     std::cout << "Outgoing command string: " << command_string_ << std::endl;
@@ -113,47 +110,39 @@ void EctaneHandler::changeState(State state)
 }
 
 
-void EctaneHandler::doNothing()
-{
+void EctaneHandler::doNothing() {
     changeState(State::do_nothing);
 }
 
 
-void EctaneHandler::socketInitialise()
-{
+void EctaneHandler::socketInitialise() {
     changeState(State::socket_initialise);
 }
 
-void EctaneHandler::connecttoDevice()
-{
+void EctaneHandler::connecttoDevice() {
     changeState(State::connect_to_device);
 }
 
 
-void EctaneHandler::setUpDevice()
-{
+void EctaneHandler::setUpDevice() {
     changeState(State::set_up_device);
 }
 
-void EctaneHandler::balanceDevice()
-{
+void EctaneHandler::balanceDevice() {
     changeState(State::balance_device);
 }
 
 
-void EctaneHandler::acquireData()
-{
+void EctaneHandler::acquireData() {
     changeState(State::acquire_data);
 }
 
 
-void EctaneHandler::stopData()
-{
+void EctaneHandler::stopData() {
     changeState(State::stop_data);
 }
 
 
-void EctaneHandler::disconnectDevice()
-{
+void EctaneHandler::disconnectDevice() {
     changeState(State::disconnect_device);
 }
