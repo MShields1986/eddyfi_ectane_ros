@@ -11,6 +11,7 @@
 #include "eddyfi_ectane/Channel.h"
 #include "eddyfi_ectane/Frequency.h"
 
+#include "c_sdk_data_structures.h"
 #include "ectane_handler.h"
 #include "eddyfi_ectane/BalanceDevice.h"
 #include "eddyfi_ectane/StreamData.h"
@@ -28,6 +29,8 @@ private:
     template <typename ParamType>
     ParamType                   paramHandler(std::string param_name, ParamType& param_value);
 
+    Configurations              configurationsFromString(std::string str);
+
     void                        initHardware();
     bool                        balanceDevice(eddyfi_ectane::BalanceDevice::Request& request,
                                               eddyfi_ectane::BalanceDevice::Response& response);
@@ -42,6 +45,7 @@ private:
     std::string                 ns_;
 
     std::string                 ectane_address_;
+    std::string                 configuration_str_;
     int32_t                     acquisition_rate_;
     int32_t                     gain_;
     int32_t                     frequency_;

@@ -1,18 +1,5 @@
 #include "ectane_node.h"
 
-/*
-enum Configurations {
-    example,
-    hf_probe_axial_1_channel,
-    hf_probe_transversal_1_channel,
-    hf_probe_axial_and_transversal_1_channel,
-    hf_probe_axial_and_transversal_4_channels,
-    lf_probe_axial_1_channel,
-    lf_probe_transversal_1_channel,
-    lf_probe_axial_and_transversal_1_channel,
-    lf_probe_axial_and_transversal_4_channels
-};
-*/
 
 EctaneNode::EctaneNode(bool* kill_now)
      : nh_(),
@@ -22,7 +9,8 @@ EctaneNode::EctaneNode(bool* kill_now)
        ns_(ros::this_node::getNamespace()),
        ectane_handler_(
            EctaneNode::paramHandler(ns_ + "/ectane_address", ectane_address_),
-           Configurations::lf_probe_axial_and_transversal_4_channels,   // configuration
+           //Configurations::lf_probe_axial_and_transversal_4_channels,   // configuration
+           EctaneNode::configurationsFromString(EctaneNode::paramHandler(ns_ + "/configuration", configuration_str_)),
            EctaneNode::paramHandler(ns_ + "/acquisition_rate", acquisition_rate_),
            EctaneNode::paramHandler(ns_ + "/gain", gain_),
            EctaneNode::paramHandler(ns_ + "/frequency", frequency_),
@@ -40,7 +28,7 @@ EctaneNode::EctaneNode(bool* kill_now)
     balance_service_ = nh_.advertiseService(ns_ + "/balance_device", &EctaneNode::balanceDevice, this);
     stream_service_ = nh_.advertiseService(ns_ + "/stream_data", &EctaneNode::streamData, this);
 
-    ROS_INFO_STREAM(node_name_ << ": Initialised");
+    ROS_INFO_STREAM(node_name_ << ": Node initialised");
 }
 
 
@@ -54,18 +42,46 @@ EctaneNode::~EctaneNode() {
 }
 
 
+template <typename ParamType>
+ParamType EctaneNode::paramHandler(std::string param_name, ParamType& param_value) {
+    while (!nh_.hasParam(param_name) and !*kill_now_) {
+        ROS_INFO_STREAM_THROTTLE(10, node_name_ << ": Waiting for parameter " << param_name);
+    }
+    nh_.getParam(param_name, param_value);
+    ROS_INFO_STREAM(node_name_ << ": Read in parameter " << param_name << " = " << param_value);
+    return param_value;
+}
+
+
+Configurations EctaneNode::configurationsFromString(std::string str) {
+    if(str == "example") return Configurations::example;
+    else if(str == "hf_probe_axial_1_channel") return Configurations::hf_probe_axial_1_channel;
+    else if(str == "hf_probe_transversal_1_channel") return Configurations::hf_probe_transversal_1_channel;
+    else if(str == "hf_probe_axial_and_transversal_1_channel") return Configurations::hf_probe_axial_and_transversal_1_channel;
+    else if(str == "hf_probe_axial_and_transversal_4_channels") return Configurations::hf_probe_axial_and_transversal_4_channels;
+    else if(str == "lf_probe_axial_1_channel") return Configurations::lf_probe_axial_1_channel;
+    else if(str == "lf_probe_transversal_1_channel") return Configurations::lf_probe_transversal_1_channel;
+    else if(str == "lf_probe_axial_and_transversal_1_channel") return Configurations::lf_probe_axial_and_transversal_1_channel;
+    else if(str == "lf_probe_axial_and_transversal_4_channels") return Configurations::lf_probe_axial_and_transversal_4_channels;
+    else return Configurations::example;
+};
+
+
 void EctaneNode::initHardware() {
     ROS_INFO_STREAM(node_name_ << ": Initialising Ectane hardware...");
     ectane_handler_.doNothing();
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
     ros::Duration(0.5).sleep();
     ectane_handler_.socketInitialise();
+    ROS_INFO_STREAM(node_name_ << ": Socket with Ectane initialised...");
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
     ros::Duration(0.5).sleep();
     ectane_handler_.connecttoDevice();
+    ROS_INFO_STREAM(node_name_ << ": Connected to device...");
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
     ros::Duration(0.5).sleep();
     ectane_handler_.setUpDevice();
+    ROS_INFO_STREAM(node_name_ << ": Device setup...");
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
     ros::Duration(0.5).sleep();
     ROS_INFO_STREAM(node_name_ << ": Ectane hardware initialised");
@@ -152,19 +168,6 @@ void EctaneNode::run() {
         ros::spinOnce();
         rate_.sleep();
     }
-}
-
-
-template <typename ParamType>
-ParamType EctaneNode::paramHandler(std::string param_name, ParamType& param_value)
-{
-    while (!nh_.hasParam(param_name) and !*kill_now_)
-    {
-        ROS_INFO_STREAM_THROTTLE(10, node_name_ << ": Waiting for parameter " << param_name);
-    }
-    nh_.getParam(param_name, param_value);
-    ROS_INFO_STREAM(node_name_ << ": Read in parameter " << param_name << " = " << param_value);
-    return param_value;
 }
 
 
