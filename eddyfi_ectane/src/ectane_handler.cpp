@@ -1,10 +1,16 @@
 #include "ectane_handler.h"
 
 
-EctaneHandler::EctaneHandler()
+EctaneHandler::EctaneHandler(
+    std::string ectane_address,
+    Configurations configuration,
+    int32_t acquisition_rate,
+    int32_t gain,
+    int32_t frequency,
+    float voltage
+    )
      : // Ectane
-       ectane_address_("192.168.002.035"),
-       //ectane_address_("127.000.000.001"),
+       ectane_address_(ectane_address),
        ec_data_(""), ec_data_ptr_(&ec_data_),
 
        // C SDK State Command Listener
@@ -19,11 +25,11 @@ EctaneHandler::EctaneHandler()
 
        // Internal Representation of Command State
        state_(State::do_nothing),
-       configuration_(Configurations::lf_probe_axial_1_channel),
-       acquisition_rate_(40),
-       gain_(1),
-       frequency_(1000),
-       voltage_(1.0)
+       configuration_(configuration),
+       acquisition_rate_(acquisition_rate),
+       gain_(gain),
+       frequency_(frequency),
+       voltage_(voltage)
 {
     updateCommandPacket();
 }

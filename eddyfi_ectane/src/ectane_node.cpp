@@ -16,15 +16,23 @@ enum Configurations {
 
 EctaneNode::EctaneNode(bool* kill_now)
      : nh_(),
-       rate_(20),
+       rate_(10),
        kill_now_(kill_now),
        node_name_(ros::this_node::getName()),
        ns_(ros::this_node::getNamespace()),
        ectane_handler_(
-       // TODO: Add configs here
-        ),
+           // TODO: Expose to param server and config file
+           "192.168.002.035",                                           // ectane_address
+           Configurations::lf_probe_axial_and_transversal_4_channels,   // configuration
+           40,                                                          // acquisition_rate
+           1,                                                           // gain
+           1000,                                                        // frequency
+           1.0                                                          // voltage
+       ),
        ec_data_ptr_(ectane_handler_.ec_data_ptr())
 {
+
+    rate_ = 40;
     initHardware();
 
     publisher_ = nh_.advertise<eddyfi_ectane::Observation>(ns_ + "/eddy_current_data", 100, true);
@@ -120,8 +128,8 @@ void EctaneNode::populateEcData() {
         }
     ec_data_.time_slots[n_timeslot] = time_slot;
     }
-
 }
+
 
 void EctaneNode::run() {
     while (ros::ok() and !*kill_now_) {
@@ -132,15 +140,15 @@ void EctaneNode::run() {
             ectane_handler_.readData();
             ROS_INFO_STREAM(node_name_ << ": Data: " << *ec_data_ptr_); // TODO: Drop this in the final version
             
-            //populateEcData();
+            populateEcData();
             publisher_.publish(ec_data_);
 
             ros::spinOnce();
-            // No rate.sleep here as the data stream may be at a different rate to the node
-            // rate_.sleep();
+            rate_.sleep();
         }
 
         ROS_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
+        ROS_INFO_STREAM_THROTTLE(10, node_name_ << ": Not streaming data...");
         ros::spinOnce();
         rate_.sleep();
     }
