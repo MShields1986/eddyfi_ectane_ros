@@ -1,0 +1,6 @@
+ectane_address: "192.168.002.035"
+# configuration: Configurations::lf_probe_axial_and_transversal_4_channels
+acquisition_rate: 40
+gain: 1
+frequency: 1000
+voltage: 1

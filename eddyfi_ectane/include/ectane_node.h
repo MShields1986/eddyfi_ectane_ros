@@ -25,6 +25,9 @@ public:
     void                        run();
 
 private:
+    template <typename ParamType>
+    ParamType                   paramHandler(std::string param_name, ParamType& param_value);
+
     void                        initHardware();
     bool                        balanceDevice(eddyfi_ectane::BalanceDevice::Request& request,
                                               eddyfi_ectane::BalanceDevice::Response& response);
@@ -37,6 +40,12 @@ private:
     bool*                       kill_now_;
     std::string                 node_name_;
     std::string                 ns_;
+
+    std::string                 ectane_address_;
+    int32_t                     acquisition_rate_;
+    int32_t                     gain_;
+    int32_t                     frequency_;
+    float                       voltage_;
 
     ros::Publisher              publisher_;
 

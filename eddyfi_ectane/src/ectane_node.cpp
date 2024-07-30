@@ -21,18 +21,18 @@ EctaneNode::EctaneNode(bool* kill_now)
        node_name_(ros::this_node::getName()),
        ns_(ros::this_node::getNamespace()),
        ectane_handler_(
-           // TODO: Expose to param server and config file
-           "192.168.002.035",                                           // ectane_address
+           EctaneNode::paramHandler(ns_ + "/ectane_address", ectane_address_),
            Configurations::lf_probe_axial_and_transversal_4_channels,   // configuration
-           40,                                                          // acquisition_rate
-           1,                                                           // gain
-           1000,                                                        // frequency
-           1.0                                                          // voltage
+           EctaneNode::paramHandler(ns_ + "/acquisition_rate", acquisition_rate_),
+           EctaneNode::paramHandler(ns_ + "/gain", gain_),
+           EctaneNode::paramHandler(ns_ + "/frequency", frequency_),
+           EctaneNode::paramHandler(ns_ + "/voltage", voltage_)
        ),
        ec_data_ptr_(ectane_handler_.ec_data_ptr())
 {
+    // Match the node rate and the Ectane rate
+    rate_ = acquisition_rate_;
 
-    rate_ = 40;
     initHardware();
 
     publisher_ = nh_.advertise<eddyfi_ectane::Observation>(ns_ + "/eddy_current_data", 100, true);
@@ -155,9 +155,8 @@ void EctaneNode::run() {
 }
 
 
-/*
 template <typename ParamType>
-void EctaneNode::paramHandler(std::string param_name, ParamType& param_value)
+ParamType EctaneNode::paramHandler(std::string param_name, ParamType& param_value)
 {
     while (!nh_.hasParam(param_name) and !*kill_now_)
     {
@@ -165,8 +164,8 @@ void EctaneNode::paramHandler(std::string param_name, ParamType& param_value)
     }
     nh_.getParam(param_name, param_value);
     ROS_INFO_STREAM(node_name_ << ": Read in parameter " << param_name << " = " << param_value);
+    return param_value;
 }
-*/
 
 
 // Signal handling
