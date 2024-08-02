@@ -5,7 +5,7 @@ UdpConnection::UdpConnection(std::string ip_address, MinimalSocket::Port port)
      : ip_(ip_address), 
        port_(port),
        address_(ip_, port_),
-       receive_message_max_size_(2000),
+       receive_message_max_size_(8 * 6 * 32 / 8),
        socket_(port_, MinimalSocket::AddressFamily::IP_V4),
        connected_socket_([this](){socket_.open(); return MinimalSocket::udp::UdpConnected<true>(socket_.connect(address_));}()) {
 }

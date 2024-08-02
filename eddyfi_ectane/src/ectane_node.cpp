@@ -1,6 +1,7 @@
 #include "ectane_node.h"
 
 
+
 EctaneNode::EctaneNode(bool* kill_now)
      : nh_(),
        rate_(10),
@@ -72,8 +73,8 @@ void EctaneNode::initHardware() {
     ectane_handler_.doNothing();
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
     ros::Duration(0.5).sleep();
-    ectane_handler_.socketInitialise();
-    ROS_INFO_STREAM(node_name_ << ": Socket with Ectane initialised...");
+    ectane_handler_.commandSocketInitialise();
+    ROS_INFO_STREAM(node_name_ << ": Command socket with Ectane initialised...");
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
     ros::Duration(0.5).sleep();
     ectane_handler_.connecttoDevice();
@@ -136,8 +137,10 @@ void EctaneNode::populateEcData() {
             // TODO: channel.dc_voltage = ;
             for (int n_freq = 0; n_freq < 8; ++n_freq) {
                 eddyfi_ectane::Frequency freq = eddyfi_ectane::Frequency();
-                // TODO: freq.imaginary = ;
-                // TODO: freq.real = ;
+
+                //freq.imaginary = (short)*(buffer + i*2);
+                //freq.real = (short)*(buffer + i*2);
+
                 channel.frequencies[n_freq] = freq;
             }
         time_slot.channels[n_channel] = channel;
@@ -149,15 +152,16 @@ void EctaneNode::populateEcData() {
 
 void EctaneNode::run() {
     while (ros::ok() and !*kill_now_) {
-        //if (ectane_handler_.state() == State::acquire_data)
+
+        // TODO: Consider running this in a dedicated thread
         while (ectane_handler_.state() == State::acquire_data) {
             ROS_INFO_STREAM_THROTTLE(10, node_name_ << ": Streaming data...");
 
             ectane_handler_.readData();
             ROS_INFO_STREAM(node_name_ << ": Data: " << *ec_data_ptr_); // TODO: Drop this in the final version
             
-            populateEcData();
-            publisher_.publish(ec_data_);
+            //populateEcData();
+            //publisher_.publish(ec_data_);
 
             ros::spinOnce();
             rate_.sleep();

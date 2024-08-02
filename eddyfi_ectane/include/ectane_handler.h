@@ -5,11 +5,11 @@
 #include <cstring>
 #include <thread>
 
-#include <MinimalSocket/udp/UdpSocket.h>
-
 #include "c_sdk_data_structures.h"
-#include "tcp_connection.h"
-#include "udp_connection.h"
+#include "tcp_server_boost.h"
+
+//#include <MinimalSocket/udp/UdpSocket.h>
+//#include "tcp_server.h"
 
 
 class EctaneHandler
@@ -23,10 +23,11 @@ public:
         int32_t frequency,
         float voltage
         );
+
     void                            readData();
 
     void                            doNothing();
-    void                            socketInitialise();
+    void                            commandSocketInitialise();
     void                            connecttoDevice();
     void                            setUpDevice();
     void                            balanceDevice();
@@ -49,15 +50,19 @@ public:
     const std::string*              ec_data_ptr() const { return ec_data_ptr_; };
 
 private:
-    // C SDK State Command Listener
-    std::string                     recipient_address_;
-    MinimalSocket::Port             send_port_;
-    TcpConnection                   sender_;
-
     // C SDK Data Sender
     std::string                     sender_address_;
-    MinimalSocket::Port             receive_port_;
-    UdpConnection                   receiver_;
+    //MinimalSocket::Port             receive_port_;
+    int                             receive_port_;
+    //TcpServer                       receiver_;
+    TcpServerBoost                  receiver_;
+
+    // C SDK State Command Listener
+    std::string                     recipient_address_;
+    //MinimalSocket::Port             send_port_;
+    int                             send_port_;
+    //TcpServer                       sender_;
+    TcpServerBoost                  sender_;
 
     // Internal Representation of Command State
     State                           state_;
@@ -73,4 +78,7 @@ private:
 
     CommandPacket                   command_packet_;
     std::string                     command_string_;
+
+    bool flag;
+    int count;
 };

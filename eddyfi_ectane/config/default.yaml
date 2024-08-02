@@ -1,5 +1,3 @@
-ectane_address: "192.168.002.035"
-
 #########################
 # Configuration Options #
 #########################
@@ -14,9 +12,14 @@ ectane_address: "192.168.002.035"
 # configuration: "lf_probe_axial_and_transversal_4_channels"
 #########################
 
-configuration: "lf_probe_axial_1_channel"
+ectane_address: "127.000.000.001"
+configuration: "example"
+#acquisition_rate: 5000
 
-acquisition_rate: 40
-gain: 1
-frequency: 1000
-voltage: 1
+#ectane_address: "192.168.002.035"
+#configuration: "lf_probe_axial_1_channel"
+acquisition_rate: 10
+
+gain: 20
+frequency: 50000
+voltage: 3
