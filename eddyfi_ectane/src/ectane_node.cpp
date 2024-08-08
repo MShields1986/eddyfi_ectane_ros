@@ -70,21 +70,33 @@ Configurations EctaneNode::configurationsFromString(std::string str) {
 
 void EctaneNode::initHardware() {
     ROS_INFO_STREAM(node_name_ << ": Initialising Ectane hardware...");
+    float wait(2);
+
     ectane_handler_.doNothing();
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
-    ros::Duration(0.5).sleep();
+    ros::Duration(wait).sleep();
+
+    /*
     ectane_handler_.commandSocketInitialise();
     ROS_INFO_STREAM(node_name_ << ": Command socket with Ectane initialised...");
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
-    ros::Duration(0.5).sleep();
+    ros::Duration(wait).sleep();
+    */
+
     ectane_handler_.connecttoDevice();
     ROS_INFO_STREAM(node_name_ << ": Connected to device...");
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
-    ros::Duration(0.5).sleep();
+    ros::Duration(wait).sleep();
+
     ectane_handler_.setUpDevice();
     ROS_INFO_STREAM(node_name_ << ": Device setup...");
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
-    ros::Duration(0.5).sleep();
+    ros::Duration(wait).sleep();
+
+    ectane_handler_.doNothing();
+    // TODO: Check to see if the C SDK handshakes to confirm state receipt
+    ros::Duration(wait).sleep();
+
     ROS_INFO_STREAM(node_name_ << ": Ectane hardware initialised");
 }
 

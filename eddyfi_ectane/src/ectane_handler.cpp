@@ -125,7 +125,8 @@ void EctaneHandler::updateCommandPacket() {
     //strcpy(command_packet_.ip_address, ("::ffff:" + ectane_address_ + "\0").c_str()); // Buffer overflow
     //strcpy(command_packet_.ip_address, (":ffff:" + ectane_address_ + "\0").c_str()); // OK
     //strcpy(command_packet_.ip_address, ("ffff:" + ectane_address_ + "\0").c_str()); // OK
-    strcpy(command_packet_.ip_address, (":ffff:" + ectane_address_).c_str());
+    //strcpy(command_packet_.ip_address, (":ffff:" + ectane_address_).c_str());
+    strcpy(command_packet_.ip_address, ectane_address_.c_str());
     command_packet_.configuration = configuration_;
     command_packet_.acquisition_rate = acquisition_rate_;
     command_packet_.gain = gain_;
