@@ -1,21 +1,6 @@
-#########################
-# Configuration Options #
-#########################
-# configuration: "example"
-# configuration: "hf_probe_axial_1_channel"
-# configuration: "hf_probe_transversal_1_channel"
-# configuration: "hf_probe_axial_and_transversal_1_channel"
-# configuration: "hf_probe_axial_and_transversal_4_channels"
-# configuration: "lf_probe_axial_1_channel"
-# configuration: "lf_probe_transversal_1_channel"
-# configuration: "lf_probe_axial_and_transversal_1_channel"
-# configuration: "lf_probe_axial_and_transversal_4_channels"
-#########################
-
-ectane_address: "127.0.0.1"
-configuration: "example"
-acquisition_rate: 10
-
-gain: 23
-frequency: 100000 # Always 50kHz for lf_probe_axial_1_channel no matter what you set here...
-voltage: 7
+settings:
+  ectane_address: "127.0.0.1"
+  acquisition_rate: 10
+  gain: 23
+  frequency: 50000
+  voltage: 7

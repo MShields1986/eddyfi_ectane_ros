@@ -1,9 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
     <group ns="ectane">
-        <arg name="configuration" default="default.yaml" />
-        <rosparam file="$(find eddyfi_ectane)/config/$(arg configuration)" command="load" />
+        <!--
+        ##########################################
+        #         Configuration Options          #
+        ##########################################
+        example
+        hf_probe_axial_1_channel
+        hf_probe_transversal_1_channel
+        hf_probe_axial_and_transversal_1_channel
+        hf_probe_axial_and_transversal_4_channels
+        lf_probe_axial_1_channel
+        lf_probe_transversal_1_channel
+        lf_probe_axial_and_transversal_1_channel
+        lf_probe_axial_and_transversal_4_channels
+        ##########################################
+        -->
+        <arg name="configuration" default="example" />
+        <!--<arg name="configuration" default="lf_probe_axial_1_channel" />-->
+        
+        <!-- Basic Configuration -->
+        <param name="settings/configuration" type="string" value="$(arg configuration)" />
+        <rosparam file="$(find eddyfi_ectane)/config/offline_mode.yaml" command="load" if="$(eval configuration == 'example')" />
+        <rosparam file="$(find eddyfi_ectane)/config/settings.yaml" command="load" unless="$(eval configuration == 'example')" />
+        <rosparam file="$(find eddyfi_ectane)/config/offline_mode.yaml" command="load" if="$(eval configuration == 'example')" />
+        
+        <!-- Crosstalk Rectification Configuration -->
+        <rosparam file="$(find eddyfi_ectane)/config/probes/crosstalk_$(arg configuration).yaml" command="load" unless="$(eval configuration == 'example')" />
+        
+        <!-- HF Coil Geometry Configuration -->
+        <rosparam file="$(find eddyfi_ectane)/config/probes/hf_axial_geometry.yaml" command="load" if="$(eval configuration == 'hf_probe_axial_1_channel')" />
 
+        <rosparam file="$(find eddyfi_ectane)/config/probes/hf_transversal_geometry.yaml" command="load" if="$(eval configuration == 'hf_probe_transversal_1_channel')" />
+
+        <group if="$(eval configuration == 'hf_probe_axial_and_transversal_1_channel')">
+            <rosparam file="$(find eddyfi_ectane)/config/probes/hf_axial_geometry.yaml" command="load" />
+            <rosparam file="$(find eddyfi_ectane)/config/probes/hf_transversal_geometry.yaml" command="load" />
+        </group>
+
+        <group if="$(eval configuration == 'hf_probe_axial_and_transversal_4_channels')">
+            <rosparam file="$(find eddyfi_ectane)/config/probes/hf_axial_geometry.yaml" command="load" />
+            <rosparam file="$(find eddyfi_ectane)/config/probes/hf_transversal_geometry.yaml" command="load" />
+        </group>
+
+        <!-- LF Coil Geometry Configuration -->
+        <rosparam file="$(find eddyfi_ectane)/config/probes/lf_axial_geometry.yaml" command="load" if="$(eval configuration == 'lf_probe_axial_1_channel')" />
+
+        <rosparam file="$(find eddyfi_ectane)/config/probes/lf_transversal_geometry.yaml" command="load" if="$(eval configuration == 'lf_probe_transversal_1_channel')" />
+
+        <group if="$(eval configuration == 'lf_probe_axial_and_transversal_1_channel')">
+            <rosparam file="$(find eddyfi_ectane)/config/probes/lf_axial_geometry.yaml" command="load" />
+            <rosparam file="$(find eddyfi_ectane)/config/probes/lf_transversal_geometry.yaml" command="load" />
+        </group>
+
+        <group if="$(eval configuration == 'lf_probe_axial_and_transversal_4_channels')">
+            <rosparam file="$(find eddyfi_ectane)/config/probes/lf_axial_geometry.yaml" command="load" />
+            <rosparam file="$(find eddyfi_ectane)/config/probes/lf_transversal_geometry.yaml" command="load" />
+        </group>
+
+        <!-- Launch Eddyfi Ectane Node -->
         <node pkg="eddyfi_ectane" type="ectane_node" name="ectane_node" output="screen"/>
     </group>
 </launch>

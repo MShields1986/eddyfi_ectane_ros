@@ -9,13 +9,13 @@ EctaneNode::EctaneNode(bool* kill_now)
        node_name_(ros::this_node::getName()),
        ns_(ros::this_node::getNamespace()),
        ectane_handler_(
-           EctaneNode::paramHandler(ns_ + "/ectane_address", ectane_address_),
+           EctaneNode::paramHandler(ns_ + "/settings/ectane_address", ectane_address_),
            //Configurations::lf_probe_axial_and_transversal_4_channels,   // configuration
-           EctaneNode::configurationsFromString(EctaneNode::paramHandler(ns_ + "/configuration", configuration_str_)),
-           EctaneNode::paramHandler(ns_ + "/acquisition_rate", acquisition_rate_),
-           EctaneNode::paramHandler(ns_ + "/gain", gain_),
-           EctaneNode::paramHandler(ns_ + "/frequency", frequency_),
-           EctaneNode::paramHandler(ns_ + "/voltage", voltage_)
+           EctaneNode::configurationsFromString(EctaneNode::paramHandler(ns_ + "/settings/configuration", configuration_str_)),
+           EctaneNode::paramHandler(ns_ + "/settings/acquisition_rate", acquisition_rate_),
+           EctaneNode::paramHandler(ns_ + "/settings/gain", gain_),
+           EctaneNode::paramHandler(ns_ + "/settings/frequency", frequency_),
+           EctaneNode::paramHandler(ns_ + "/settings/voltage", voltage_)
        ),
        ec_data_ptr_(ectane_handler_.ec_data_ptr())
 {
