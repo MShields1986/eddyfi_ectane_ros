@@ -21,5 +21,5 @@ configuration: "lf_probe_axial_1_channel"
 acquisition_rate: 10
 
 gain: 23
-frequency: 100000
+frequency: 100000 # Always 50kHz for lf_probe_axial_1_channel no matter what you set here...
 voltage: 7

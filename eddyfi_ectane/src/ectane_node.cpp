@@ -142,7 +142,7 @@ void EctaneNode::populateEcData() {
     ec_data_.header.stamp = ros::Time::now();
 
     // TODO: Channels come in a psuedo-random order and will need sorting
-    for (int n_timeslot = 0; n_timeslot < 32; ++n_timeslot) {
+    for (int n_timeslot = 0; n_timeslot < 10; ++n_timeslot) {
         eddyfi_ectane::TimeSlot time_slot = eddyfi_ectane::TimeSlot();
         for (int n_channel = 0; n_channel < 8; ++n_channel) {
             eddyfi_ectane::Channel channel = eddyfi_ectane::Channel();
