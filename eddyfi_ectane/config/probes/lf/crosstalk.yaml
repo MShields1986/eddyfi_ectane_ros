@@ -1,0 +1,98 @@
+crosstalk:
+  lf_probe_axial_1_channel:
+    A01:
+      time_slot:  1
+      input: 1
+    A02:
+      time_slot:  1
+      input: 2
+    A03:
+      time_slot:  2
+      input: 2
+    A04:
+      time_slot:  2
+      input: 1
+    A05:
+      time_slot:  7
+      input: 1
+    A06:
+      time_slot:  7
+      input: 2
+    A07:
+      time_slot:  8
+      input: 2
+    A08:
+      time_slot:  8
+      input: 3
+    A09:
+      time_slot:  3
+      input: 3
+    A10:
+      time_slot:  3
+      input: 1
+    A11:
+      time_slot:  4
+      input: 1
+    A12:
+      time_slot:  4
+      input: 2
+    A13:
+      time_slot:  9
+      input: 2
+    A14:
+      time_slot:  9
+      input: 1
+    A15:
+      time_slot:  10
+      input: 1
+    A16:
+      time_slot:  10
+      input: 2
+    A17:
+      time_slot:  5
+      input: 2
+    A18:
+      time_slot:  5
+      input: 3
+    A19:
+      time_slot:  6
+      input: 3
+    A20:
+      time_slot:  6
+      input: 4
+    A21:
+      time_slot:  1
+      input: 4
+    A22:
+      time_slot:  1
+      input: 3
+    A23:
+      time_slot:  2
+      input: 3
+    A24:
+      time_slot:  2
+      input: 4
+    A25:
+      time_slot:  7
+      input: 4
+    A26:
+      time_slot:  7
+      input: 5
+    A27:
+      time_slot:  8
+      input: 5
+    A28:
+      time_slot:  8
+      input: 4
+    A29:
+      time_slot:  3
+      input: 4
+    A30:
+      time_slot:  3
+      input: 5
+    A31:
+      time_slot:  4
+      input: 5
+  #lf_probe_transversal_1_channel:
+  #lf_probe_axial_and_transversal_1_channel:
+  #lf_probe_axial_and_transversal_4_channels:
