@@ -10,9 +10,9 @@ TcpServerBoost::TcpServerBoost(std::string ip_address, int port)
         32                          // Timeslots per observation
         * 8                         // Channels per timeslot
         * 5                         // Fields per channel (5 Freqs + 1 Voltage)
-        //+ 3                         // Encoders
-        //+ 32 / 4                    // Saturations
-        //+ 1                         // Line 583 of hostdemo.c says ten | Seems wrong to me looks like it ought to be one
+        //+ 3       NOT FORWARDED FROM SDK ATM  // Encoders
+        //+ 32 / 4  NOT FORWARDED FROM SDK ATM  // Saturations
+        //+ 1       NOT FORWARDED FROM SDK ATM  // Line 583 of hostdemo.c says ten | Seems wrong to me looks like it ought to be one
         )
         * 32                        // Bits per field
         / CHAR_BIT                  // Bits per byte
@@ -45,8 +45,14 @@ std::string TcpServerBoost::receive() {
     }
 
     buf.commit(n);
+    //std::cout << "#################################" << std::endl;
+    //std::cout << "            Start Read" << std::endl;
+    //std::cout << "#################################" << std::endl;
+    //std::cout << "TCP Server read " << n << " bytes" << std::endl;
 
     std::string data = boost::asio::buffer_cast<const char*>(buf.data());
+    //std::cout << "TCP Server yielded a string of " << data.size() << " bytes" << std::endl;
+
     return data;
 }
 

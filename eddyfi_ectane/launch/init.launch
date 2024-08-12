@@ -5,19 +5,18 @@
         ##########################################
         #         Configuration Options          #
         ##########################################
-        example
+        example                                   - No configs for this and not handled well in ectane_node.cpp
         hf_probe_axial_1_channel
         hf_probe_transversal_1_channel
         hf_probe_axial_and_transversal_1_channel
-        hf_probe_axial_and_transversal_4_channels
+        hf_probe_axial_and_transversal_4_channels - NOT YET IMPLEMENTED IN ectane_node.cpp
         lf_probe_axial_1_channel
         lf_probe_transversal_1_channel
         lf_probe_axial_and_transversal_1_channel
-        lf_probe_axial_and_transversal_4_channels
+        lf_probe_axial_and_transversal_4_channels - NOT YET IMPLEMENTED IN ectane_node.cpp
         ##########################################
         -->
-        <arg name="configuration" default="example" />
-        <!--<arg name="configuration" default="lf_probe_axial_1_channel" />-->
+        <arg name="configuration" default="lf_probe_axial_and_transversal_1_channel" />
         
         <!-- Basic Configuration -->
         <param name="settings/configuration" type="string" value="$(arg configuration)" />

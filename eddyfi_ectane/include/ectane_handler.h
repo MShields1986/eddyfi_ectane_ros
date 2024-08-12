@@ -78,7 +78,4 @@ private:
 
     CommandPacket                   command_packet_;
     std::string                     command_string_;
-
-    bool flag;
-    int count;
 };

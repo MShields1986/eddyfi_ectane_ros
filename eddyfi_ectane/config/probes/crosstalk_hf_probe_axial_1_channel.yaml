@@ -1,0 +1,93 @@
+# Taken from...
+# https://github.com/UoS-EEE-Automation/EctaneLabviewIntegration/blob/main/Documentation/Additional%20Configurations/ChannelMapping/HF-1Channel-Axial.xls
+crosstalk:
+  A02:
+    time_slot:  1
+    input:  1
+  A03:
+    time_slot:  2
+    input:  1
+  A04:
+    time_slot:  3
+    input:  2
+  A05:
+    time_slot:  4
+    input:  2
+  A06:
+    time_slot:  5
+    input:  2
+  A07:
+    time_slot:  6
+    input:  1
+  A08:
+    time_slot:  7
+    input:  1
+  A09:
+    time_slot:  8
+    input:  1
+  A10:
+    time_slot:  9
+    input:  2
+  A11:
+    time_slot: 10
+    input:  2
+  A12:
+    time_slot: 11
+    input:  2
+  A13:
+    time_slot: 12
+    input:  1
+  A14:
+    time_slot: 13
+    input:  1
+  A15:
+    time_slot: 14
+    input:  1
+  A16:
+    time_slot: 15
+    input:  2
+  A17:
+    time_slot: 16
+    input:  3
+  A18:
+    time_slot:  1
+    input:  3
+  A19:
+    time_slot:  2
+    input:  3
+  A20:
+    time_slot:  3
+    input:  4
+  A21:
+    time_slot:  4
+    input:  4
+  A22:
+    time_slot:  5
+    input:  4
+  A23:
+    time_slot:  6
+    input:  3
+  A24:
+    time_slot:  7
+    input:  3
+  A25:
+    time_slot:  8
+    input:  3
+  A26:
+    time_slot:  9
+    input:  4
+  A27:
+    time_slot: 10
+    input:  4
+  A28:
+    time_slot: 11
+    input:  4
+  A29:
+    time_slot: 12
+    input:  3
+  A30:
+    time_slot: 13
+    input:  3
+  A31:
+    time_slot: 14
+    input:  3

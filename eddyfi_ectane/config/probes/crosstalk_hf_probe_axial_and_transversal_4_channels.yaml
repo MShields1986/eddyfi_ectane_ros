@@ -1,0 +1,746 @@
+# Taken from...
+# https://github.com/UoS-EEE-Automation/EctaneLabviewIntegration/blob/main/Documentation/Additional%20Configurations/ChannelMapping/HF-4Channels-Axial%26Transversal-MixedChannels.xls
+crosstalk:
+  # Frequency 1
+  ## Axial Channels
+  F1A02:
+    time_slot:  1
+    input:  1
+  F1A03:
+    time_slot:  2
+    input:  1
+  F1A04:
+    time_slot:  3
+    input:  2
+  F1A05:
+    time_slot:  4
+    input:  2
+  F1A06:
+    time_slot:  5
+    input:  2
+  F1A07:
+    time_slot:  6
+    input:  1
+  F1A08:
+    time_slot:  7
+    input:  1
+  F1A09:
+    time_slot:  8
+    input:  1
+  F1A10:
+    time_slot:  9
+    input:  2
+  F1A11:
+    time_slot: 10
+    input:  2
+  F1A12:
+    time_slot: 11
+    input:  2
+  F1A13:
+    time_slot: 12
+    input:  1
+  F1A14:
+    time_slot: 13
+    input:  1
+  F1A15:
+    time_slot: 14
+    input:  1
+  F1A16:
+    time_slot: 15
+    input:  2
+  F1A17:
+    time_slot: 16
+    input:  3
+  F1A18:
+    time_slot:  1
+    input:  3
+  F1A19:
+    time_slot:  2
+    input:  3
+  F1A20:
+    time_slot:  3
+    input:  4
+  F1A21:
+    time_slot:  4
+    input:  4
+  F1A22:
+    time_slot:  5
+    input:  4
+  F1A23:
+    time_slot:  6
+    input:  3
+  F1A24:
+    time_slot:  7
+    input:  3
+  F1A25:
+    time_slot:  8
+    input:  3
+  F1A26:
+    time_slot:  9
+    input:  4
+  F1A27:
+    time_slot: 10
+    input:  4
+  F1A28:
+    time_slot: 11
+    input:  4
+  F1A29:
+    time_slot: 12
+    input:  3
+  F1A30:
+    time_slot: 17
+    input:  3
+  F1A31:
+    time_slot: 18
+    input:  3
+
+  # Frequency 1
+  ## Transversal Channels
+  F1T02:
+    time_slot: 17
+    input:  1
+  F1T03:
+    time_slot: 18
+    input:  1
+  F1T04:
+    time_slot:  1
+    input:  2
+  F1T05:
+    time_slot:  2
+    input:  2
+  F1T06:
+    time_slot:  3
+    input:  1
+  F1T07:
+    time_slot:  4
+    input:  1
+  F1T08:
+    time_slot:  5
+    input:  1
+  F1T09:
+    time_slot:  6
+    input:  2
+  F1T10:
+    time_slot:  7
+    input:  2
+  F1T11:
+    time_slot:  8
+    input:  2
+  F1T12:
+    time_slot:  9
+    input:  1
+  F1T13:
+    time_slot: 10
+    input:  1
+  F1T14:
+    time_slot: 11
+    input:  1
+  F1T15:
+    time_slot: 12
+    input:  2
+  F1T16:
+    time_slot: 13
+    input:  3
+  F1T17:
+    time_slot: 14
+    input:  3
+  F1T18:
+    time_slot: 15
+    input:  3
+  F1T19:
+    time_slot: 16
+    input:  4
+  F1T20:
+    time_slot:  1
+    input:  4
+  F1T21:
+    time_slot:  2
+    input:  4
+  F1T22:
+    time_slot:  3
+    input:  3
+  F1T23:
+    time_slot:  4
+    input:  3
+  F1T24:
+    time_slot:  5
+    input:  3
+  F1T25:
+    time_slot:  6
+    input:  4
+  F1T26:
+    time_slot:  7
+    input:  4
+  F1T27:
+    time_slot:  8
+    input:  4
+  F1T28:
+    time_slot:  9
+    input:  3
+  F1T29:
+    time_slot: 10
+    input:  3
+  F1T30:
+    time_slot: 11
+    input:  3
+  F1T31:
+    time_slot: 12
+    input:  4
+
+  # Frequency 2
+  ## Axial Channels
+  F2A02:
+    time_slot:  1
+    input:  1
+  F2A03:
+    time_slot:  2
+    input:  1
+  F2A04:
+    time_slot:  3
+    input:  2
+  F2A05:
+    time_slot:  4
+    input:  2
+  F2A06:
+    time_slot:  5
+    input:  2
+  F2A07:
+    time_slot:  6
+    input:  1
+  F2A08:
+    time_slot:  7
+    input:  1
+  F2A09:
+    time_slot:  8
+    input:  1
+  F2A10:
+    time_slot:  9
+    input:  2
+  F2A11:
+    time_slot: 10
+    input:  2
+  F2A12:
+    time_slot: 11
+    input:  2
+  F2A13:
+    time_slot: 12
+    input:  1
+  F2A14:
+    time_slot: 13
+    input:  1
+  F2A15:
+    time_slot: 14
+    input:  1
+  F2A16:
+    time_slot: 15
+    input:  2
+  F2A17:
+    time_slot: 16
+    input:  3
+  F2A18:
+    time_slot:  1
+    input:  3
+  F2A19:
+    time_slot:  2
+    input:  3
+  F2A20:
+    time_slot:  3
+    input:  4
+  F2A21:
+    time_slot:  4
+    input:  4
+  F2A22:
+    time_slot:  5
+    input:  4
+  F2A23:
+    time_slot:  6
+    input:  3
+  F2A24:
+    time_slot:  7
+    input:  3
+  F2A25:
+    time_slot:  8
+    input:  3
+  F2A26:
+    time_slot:  9
+    input:  4
+  F2A27:
+    time_slot: 10
+    input:  4
+  F2A28:
+    time_slot: 11
+    input:  4
+  F2A29:
+    time_slot: 12
+    input:  3
+  F2A30:
+    time_slot: 17
+    input:  3
+  F2A31:
+    time_slot: 18
+    input:  3
+
+  # Frequency 2
+  ## Transversal Channels
+  F2T02:
+    time_slot: 17
+    input:  1
+  F2T03:
+    time_slot: 18
+    input:  1
+  F2T04:
+    time_slot:  1
+    input:  2
+  F2T05:
+    time_slot:  2
+    input:  2
+  F2T06:
+    time_slot:  3
+    input:  1
+  F2T07:
+    time_slot:  4
+    input:  1
+  F2T08:
+    time_slot:  5
+    input:  1
+  F2T09:
+    time_slot:  6
+    input:  2
+  F2T10:
+    time_slot:  7
+    input:  2
+  F2T11:
+    time_slot:  8
+    input:  2
+  F2T12:
+    time_slot:  9
+    input:  1
+  F2T13:
+    time_slot: 10
+    input:  1
+  F2T14:
+    time_slot: 11
+    input:  1
+  F2T15:
+    time_slot: 12
+    input:  2
+  F2T16:
+    time_slot: 13
+    input:  3
+  F2T17:
+    time_slot: 14
+    input:  3
+  F2T18:
+    time_slot: 15
+    input:  3
+  F2T19:
+    time_slot: 16
+    input:  4
+  F2T20:
+    time_slot:  1
+    input:  4
+  F2T21:
+    time_slot:  2
+    input:  4
+  F2T22:
+    time_slot:  3
+    input:  3
+  F2T23:
+    time_slot:  4
+    input:  3
+  F2T24:
+    time_slot:  5
+    input:  3
+  F2T25:
+    time_slot:  6
+    input:  4
+  F2T26:
+    time_slot:  7
+    input:  4
+  F2T27:
+    time_slot:  8
+    input:  4
+  F2T28:
+    time_slot:  9
+    input:  3
+  F2T29:
+    time_slot: 10
+    input:  3
+  F2T30:
+    time_slot: 11
+    input:  3
+  F2T31:
+    time_slot: 12
+    input:  4
+
+  # Frequency 3
+  ## Axial Channels
+  F3A02:
+    time_slot:  1
+    input:  1
+  F3A03:
+    time_slot:  2
+    input:  1
+  F3A04:
+    time_slot:  3
+    input:  2
+  F3A05:
+    time_slot:  4
+    input:  2
+  F3A06:
+    time_slot:  5
+    input:  2
+  F3A07:
+    time_slot:  6
+    input:  1
+  F3A08:
+    time_slot:  7
+    input:  1
+  F3A09:
+    time_slot:  8
+    input:  1
+  F3A10:
+    time_slot:  9
+    input:  2
+  F3A11:
+    time_slot: 10
+    input:  2
+  F3A12:
+    time_slot: 11
+    input:  2
+  F3A13:
+    time_slot: 12
+    input:  1
+  F3A14:
+    time_slot: 13
+    input:  1
+  F3A15:
+    time_slot: 14
+    input:  1
+  F3A16:
+    time_slot: 15
+    input:  2
+  F3A17:
+    time_slot: 16
+    input:  3
+  F3A18:
+    time_slot:  1
+    input:  3
+  F3A19:
+    time_slot:  2
+    input:  3
+  F3A20:
+    time_slot:  3
+    input:  4
+  F3A21:
+    time_slot:  4
+    input:  4
+  F3A22:
+    time_slot:  5
+    input:  4
+  F3A23:
+    time_slot:  6
+    input:  3
+  F3A24:
+    time_slot:  7
+    input:  3
+  F3A25:
+    time_slot:  8
+    input:  3
+  F3A26:
+    time_slot:  9
+    input:  4
+  F3A27:
+    time_slot: 10
+    input:  4
+  F3A28:
+    time_slot: 11
+    input:  4
+  F3A29:
+    time_slot: 12
+    input:  3
+  F3A30:
+    time_slot: 17
+    input:  3
+  F3A31:
+    time_slot: 18
+    input:  3
+
+  # Frequency 3
+  ## Transversal Channels
+  F3T02:
+    time_slot: 17
+    input:  1
+  F3T03:
+    time_slot: 18
+    input:  1
+  F3T04:
+    time_slot:  1
+    input:  2
+  F3T05:
+    time_slot:  2
+    input:  2
+  F3T06:
+    time_slot:  3
+    input:  1
+  F3T07:
+    time_slot:  4
+    input:  1
+  F3T08:
+    time_slot:  5
+    input:  1
+  F3T09:
+    time_slot:  6
+    input:  2
+  F3T10:
+    time_slot:  7
+    input:  2
+  F3T11:
+    time_slot:  8
+    input:  2
+  F3T12:
+    time_slot:  9
+    input:  1
+  F3T13:
+    time_slot: 10
+    input:  1
+  F3T14:
+    time_slot: 11
+    input:  1
+  F3T15:
+    time_slot: 12
+    input:  2
+  F3T16:
+    time_slot: 13
+    input:  3
+  F3T17:
+    time_slot: 14
+    input:  3
+  F3T18:
+    time_slot: 15
+    input:  3
+  F3T19:
+    time_slot: 16
+    input:  4
+  F3T20:
+    time_slot:  1
+    input:  4
+  F3T21:
+    time_slot:  2
+    input:  4
+  F3T22:
+    time_slot:  3
+    input:  3
+  F3T23:
+    time_slot:  4
+    input:  3
+  F3T24:
+    time_slot:  5
+    input:  3
+  F3T25:
+    time_slot:  6
+    input:  4
+  F3T26:
+    time_slot:  7
+    input:  4
+  F3T27:
+    time_slot:  8
+    input:  4
+  F3T28:
+    time_slot:  9
+    input:  3
+  F3T29:
+    time_slot: 10
+    input:  3
+  F3T30:
+    time_slot: 11
+    input:  3
+  F3T31:
+    time_slot: 12
+    input:  4
+
+  # Frequency 4
+  ## Axial Channels
+  F4A02:
+    time_slot:  1
+    input:  1
+  F4A03:
+    time_slot:  2
+    input:  1
+  F4A04:
+    time_slot:  3
+    input:  2
+  F4A05:
+    time_slot:  4
+    input:  2
+  F4A06:
+    time_slot:  5
+    input:  2
+  F4A07:
+    time_slot:  6
+    input:  1
+  F4A08:
+    time_slot:  7
+    input:  1
+  F4A09:
+    time_slot:  8
+    input:  1
+  F4A10:
+    time_slot:  9
+    input:  2
+  F4A11:
+    time_slot: 10
+    input:  2
+  F4A12:
+    time_slot: 11
+    input:  2
+  F4A13:
+    time_slot: 12
+    input:  1
+  F4A14:
+    time_slot: 13
+    input:  1
+  F4A15:
+    time_slot: 14
+    input:  1
+  F4A16:
+    time_slot: 15
+    input:  2
+  F4A17:
+    time_slot: 16
+    input:  3
+  F4A18:
+    time_slot:  1
+    input:  3
+  F4A19:
+    time_slot:  2
+    input:  3
+  F4A20:
+    time_slot:  3
+    input:  4
+  F4A21:
+    time_slot:  4
+    input:  4
+  F4A22:
+    time_slot:  5
+    input:  4
+  F4A23:
+    time_slot:  6
+    input:  3
+  F4A24:
+    time_slot:  7
+    input:  3
+  F4A25:
+    time_slot:  8
+    input:  3
+  F4A26:
+    time_slot:  9
+    input:  4
+  F4A27:
+    time_slot: 10
+    input:  4
+  F4A28:
+    time_slot: 11
+    input:  4
+  F4A29:
+    time_slot: 12
+    input:  3
+  F4A30:
+    time_slot: 17
+    input:  3
+  F4A31:
+    time_slot: 18
+    input:  3
+
+  # Frequency 4
+  ## Transversal Channels
+  F4T02:
+    time_slot: 17
+    input:  1
+  F4T03:
+    time_slot: 18
+    input:  1
+  F4T04:
+    time_slot:  1
+    input:  2
+  F4T05:
+    time_slot:  2
+    input:  2
+  F4T06:
+    time_slot:  3
+    input:  1
+  F4T07:
+    time_slot:  4
+    input:  1
+  F4T08:
+    time_slot:  5
+    input:  1
+  F4T09:
+    time_slot:  6
+    input:  2
+  F4T10:
+    time_slot:  7
+    input:  2
+  F4T11:
+    time_slot:  8
+    input:  2
+  F4T12:
+    time_slot:  9
+    input:  1
+  F4T13:
+    time_slot: 10
+    input:  1
+  F4T14:
+    time_slot: 11
+    input:  1
+  F4T15:
+    time_slot: 12
+    input:  2
+  F4T16:
+    time_slot: 13
+    input:  3
+  F4T17:
+    time_slot: 14
+    input:  3
+  F4T18:
+    time_slot: 15
+    input:  3
+  F4T19:
+    time_slot: 16
+    input:  4
+  F4T20:
+    time_slot:  1
+    input:  4
+  F4T21:
+    time_slot:  2
+    input:  4
+  F4T22:
+    time_slot:  3
+    input:  3
+  F4T23:
+    time_slot:  4
+    input:  3
+  F4T24:
+    time_slot:  5
+    input:  3
+  F4T25:
+    time_slot:  6
+    input:  4
+  F4T26:
+    time_slot:  7
+    input:  4
+  F4T27:
+    time_slot:  8
+    input:  4
+  F4T28:
+    time_slot:  9
+    input:  3
+  F4T29:
+    time_slot: 10
+    input:  3
+  F4T30:
+    time_slot: 11
+    input:  3
+  F4T31:
+    time_slot: 12
+    input:  4

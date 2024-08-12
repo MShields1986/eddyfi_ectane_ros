@@ -1,2 +1,3 @@
-uint16 imaginary
-uint16 real
+int32 frequency
+int32 imaginary_reading
+int32 real_reading

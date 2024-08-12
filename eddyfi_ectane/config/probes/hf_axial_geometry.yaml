@@ -1,3 +1,5 @@
+# Taken from...
+# https://github.com/UoS-EEE-Automation/EctaneLabviewIntegration/blob/main/Documentation/Additional%20Configurations/highFreqProbeTDS.pdf
 geometry:
   A02:
     x:  1.125
