@@ -2,6 +2,7 @@
 
 #include <signal.h>
 #include <algorithm>
+#include <complex>
 
 #include <ros/ros.h>
 
@@ -74,6 +75,6 @@ private:
     ros::ServiceServer                                       stream_service_;
 
     EctaneHandler                                            ectane_handler_;
-    const std::string*                                       ec_data_ptr_;
+    const std::vector<int>*                                  ec_data_ptr_;
     eddyfi_ectane::Observation                               ec_data_;
 };

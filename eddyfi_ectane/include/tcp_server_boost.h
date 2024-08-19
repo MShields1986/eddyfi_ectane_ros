@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 #include <boost/asio.hpp>
 
 //using namespace boost::asio;
@@ -11,7 +12,7 @@
 class TcpServerBoost {
 public:
     TcpServerBoost(std::string ip_address, int port);
-    std::string                        receive();
+    std::vector<int>                   receive();
     void                               send(const std::string& message);
 
 private:

@@ -44,10 +44,10 @@ private:
 
     // Ectane
     std::string                     ectane_address_;
-    std::string                     ec_data_;
-    std::string*                    ec_data_ptr_;
+    std::vector<int>                ec_data_;
+    std::vector<int>*               ec_data_ptr_;
 public:
-    const std::string*              ec_data_ptr() const { return ec_data_ptr_; };
+    const std::vector<int>*         ec_data_ptr() const { return ec_data_ptr_; };
 
 private:
     // C SDK Data Sender

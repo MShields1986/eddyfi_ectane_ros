@@ -12,7 +12,7 @@ EctaneHandler::EctaneHandler(
     )
      : // Ectane
        ectane_address_(ectane_address),
-       ec_data_("null"), ec_data_ptr_(&ec_data_),
+       ec_data_(), ec_data_ptr_(&ec_data_),
 
        // C SDK Data Sender
        sender_address_("127.0.0.1"),

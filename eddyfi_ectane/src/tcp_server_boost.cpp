@@ -32,7 +32,7 @@ TcpServerBoost::TcpServerBoost(std::string ip_address, int port)
 }
 
 
-std::string TcpServerBoost::receive() {
+std::vector<int> TcpServerBoost::receive() {
     boost::asio::streambuf buf;
     boost::asio::streambuf::mutable_buffers_type bufs = buf.prepare(receive_message_max_size_);
 
@@ -49,9 +49,11 @@ std::string TcpServerBoost::receive() {
     //std::cout << "            Start Read" << std::endl;
     //std::cout << "#################################" << std::endl;
     //std::cout << "TCP Server read " << n << " bytes" << std::endl;
+    //std::cout << "Buffer size " << buf.size() << " bytes" << std::endl;
 
-    std::string data = boost::asio::buffer_cast<const char*>(buf.data());
-    //std::cout << "TCP Server yielded a string of " << data.size() << " bytes" << std::endl;
+    std::vector<int> data(32 * 8 * 5);
+    boost::asio::buffer_copy(boost::asio::buffer(data), buf.data());
+    //std::cout << "TCP Server yielded a vector<int> of " << data.size() * 32 / 8 << " bytes" << std::endl;
 
     return data;
 }

@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <group ns="ectane">
-        <!--
-        ##########################################
-        #         Configuration Options          #
-        ##########################################
-        example                                   - No configs for this and not handled well in ectane_node.cpp
-        hf_probe_axial_1_channel
-        hf_probe_transversal_1_channel
-        hf_probe_axial_and_transversal_1_channel
-        hf_probe_axial_and_transversal_4_channels - NOT YET IMPLEMENTED IN ectane_node.cpp
-        lf_probe_axial_1_channel
-        lf_probe_transversal_1_channel
-        lf_probe_axial_and_transversal_1_channel
-        lf_probe_axial_and_transversal_4_channels - NOT YET IMPLEMENTED IN ectane_node.cpp
-        ##########################################
-        -->
-        <arg name="configuration" default="lf_probe_axial_and_transversal_1_channel" />
-        
+    <!--
+    ##########################################
+    #         Configuration Options          #
+    ##########################################
+    example                                   - No configs for this and not handled well in ectane_node.cpp
+    hf_probe_axial_1_channel
+    hf_probe_transversal_1_channel
+    hf_probe_axial_and_transversal_1_channel
+    hf_probe_axial_and_transversal_4_channels - NOT YET IMPLEMENTED IN ectane_node.cpp
+    lf_probe_axial_1_channel
+    lf_probe_transversal_1_channel
+    lf_probe_axial_and_transversal_1_channel
+    lf_probe_axial_and_transversal_4_channels - NOT YET IMPLEMENTED IN ectane_node.cpp
+    ##########################################
+    -->
+    <arg name="configuration" default="lf_probe_axial_and_transversal_1_channel" />
+    <arg name="rviz" default="true" />
+
+    <group ns="ectane">        
         <!-- Basic Configuration -->
         <param name="settings/configuration" type="string" value="$(arg configuration)" />
         <rosparam file="$(find eddyfi_ectane)/config/offline_mode.yaml" command="load" if="$(eval configuration == 'example')" />
@@ -59,5 +60,15 @@
 
         <!-- Launch Eddyfi Ectane Node -->
         <node pkg="eddyfi_ectane" type="ectane_node" name="ectane_node" output="screen"/>
+
+        <!-- EC Data to Pointcloud at Array -->
+        <node pkg="eddyfi_ectane" type="ec_data_to_pointcloud_node" name="ec_data_to_pointcloud_node" output="screen"/>
+
+        <!-- Launch Visualisation/ Reconstruction Node -->
+        <node pkg="eddyfi_ectane" type="reconstruction_node" name="reconstruction_node" output="screen"/>
     </group>
+
+    <!-- Rviz -->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find eddyfi_ectane)/rviz/config.rviz" if="$(arg rviz)" />
+
 </launch>

@@ -1,6 +1,6 @@
 #include "ectane_node.h"
 
-
+EctaneNode::
 
 EctaneNode::EctaneNode(bool* kill_now)
      : nh_(),
@@ -26,7 +26,8 @@ EctaneNode::EctaneNode(bool* kill_now)
     getChannelConfigurations();
 
     // Populate ROS message
-    ec_data_.header.frame_id = ns_;
+    //ec_data_.header.frame_id = ns_; // Include the proceeding slash...
+    ec_data_.header.frame_id = "ectane";
 
     for (auto& entry : channel_configs_and_readings_) {
         ROS_DEBUG_STREAM(
@@ -211,7 +212,7 @@ void EctaneNode::uniqueElements(std::vector<std::string>& vec) {
 
 void EctaneNode::initHardware() {
     ROS_INFO_STREAM(node_name_ << ": Initialising Ectane hardware...");
-    float wait(2);
+    float wait(1.0);
 
     ectane_handler_.doNothing();
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
@@ -279,47 +280,43 @@ bool EctaneNode::streamData(eddyfi_ectane::StreamData::Request& request,
 
 
 void EctaneNode::populateEcData() {
-
-    //##################################################
-    // Initialise buffer
-    // TODO: Instantiate this elsewhere
-    int max_buff_size_elements = 32 * 8 * 5;
-    int max_buff_size_bits = max_buff_size_elements * 32;
-    int max_buff_size_bytes = max_buff_size_bits / CHAR_BIT;
-
-    int    buffer[max_buff_size_elements];      // 32 bits per element
-    //uint32_t buffer[max_buff_size_elements];    // 32 bits per element
-
-    bzero(&buffer, max_buff_size_elements);
-
-    //##################################################
-    // Read data into buffer
-    size_t n_bytes = ec_data_ptr_->size();
-    size_t n_bits = n_bytes * 32 / CHAR_BIT;
-
-    ROS_DEBUG_STREAM("#################################");
-    ROS_DEBUG_STREAM("Ectaner Node read a string of " << n_bytes << " bytes = " << n_bits << " bits");
-
-    std::memcpy(&buffer, ec_data_ptr_->c_str(), n_bytes);
-    // TODO: Think this ought to be...
-    //std::memcpy(&buffer, ec_data_ptr_->c_str(), max_buff_size_bytes);
-
     int i = 0;
     for (auto& entry : channel_configs_and_readings_) {
         entry = std::tuple(
-            std::get<0>(entry),                                // Channel name
-            std::get<1>(entry),                                // time_slot
-            std::get<2>(entry),                                // input
-            std::get<3>(entry),                                // x_pos
-            std::get<4>(entry),                                // y_pos
-            (int)(short)(((buffer[i]) >> 16) & 0x0000FFFF),    // Imaginary value
-            (int)(short)(((buffer[i]) >> 0) & 0x0000FFFF)      // Real value
+            std::get<0>(entry),                                               // Channel name
+            std::get<1>(entry),                                               // time_slot
+            std::get<2>(entry),                                               // input
+            std::get<3>(entry),                                               // x_pos
+            std::get<4>(entry),                                               // y_pos
+            (int32_t)(int16_t)((((*ec_data_ptr_)[i]) >> 16) & 0x0000FFFF),    // Imaginary value
+            (int32_t)(int16_t)((((*ec_data_ptr_)[i]) >> 0) & 0x0000FFFF)      // Real value
             );
 
-        ROS_DEBUG_STREAM("Data: " << std::get<0>(entry) << ", " << std::get<5>(entry) << ", " << std::get<6>(entry));
+        ROS_DEBUG_STREAM("Buffer: " << (*ec_data_ptr_)[i]);
+        ROS_DEBUG_STREAM(
+            "Name: " << std::get<0>(entry) << " (r=" << std::get<6>(entry) << ",i=" << std::get<5>(entry) << ")"
+            );
 
-        ec_data_.channels[i].imaginary_reading = std::get<5>(entry);
-        ec_data_.channels[i].real_reading = std::get<6>(entry);
+        //std::complex<int> reading(std::get<6>(entry), std::get<5>(entry));
+        std::complex<double> reading((double)std::get<6>(entry), (double)std::get<5>(entry));
+
+        //######################################################################
+        // TODO: Need to phase rotate the reading
+        //######################################################################
+
+        //reading = std::polar(std::abs(reading), std::arg(reading) + 3.14159 / 2);
+
+        //double shift(3.14159 / 2);
+        double shift(0.0);
+        double mag = std::abs(reading);
+        double theta = std::arg(reading) + shift;
+        reading = std::complex(mag * cos(theta), mag * sin(theta));
+
+        ec_data_.channels[i].imaginary_reading = std::imag(reading);
+        ec_data_.channels[i].real_reading = std::real(reading);
+
+        //ec_data_.channels[i].imaginary_reading = std::get<5>(entry);
+        //ec_data_.channels[i].real_reading = std::get<6>(entry);
 
         i++;
     }

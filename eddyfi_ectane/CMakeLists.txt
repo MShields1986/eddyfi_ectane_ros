@@ -63,15 +63,19 @@ endif(ENABLE_CPPCHECK)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  geometry_msgs
-  message_generation
   roscpp
+  message_generation
+
   std_msgs
-  tf2
-  tf2_geometry_msgs
-  tf2_msgs
-  tf2_ros
+  sensor_msgs
+  geometry_msgs
   visualization_msgs
+
+  tf2
+  tf2_ros
+  tf2_msgs
+  # tf2_geometry_msgs
+  tf2_sensor_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -135,6 +139,7 @@ generate_messages(
   DEPENDENCIES
 #   geometry_msgs
   std_msgs
+  sensor_msgs
 #   visualization_msgs
 #   tf2_geometry_msgs
 #   tf2_msgs
@@ -172,16 +177,21 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES eddyfi_ectane
-  CATKIN_DEPENDS 
-    geometry_msgs 
-    message_runtime 
+  CATKIN_DEPENDS  
     roscpp 
+    message_runtime 
+
     std_msgs 
-    tf2 
-    tf2_geometry_msgs
-    tf2_msgs
-    tf2_ros
+    sensor_msgs
+    geometry_msgs
     visualization_msgs
+
+    tf2 
+    tf2_ros
+    tf2_msgs
+    # tf2_geometry_msgs
+    tf2_sensor_msgs
+
 #  DEPENDS system_lib
 )
 
@@ -193,6 +203,10 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
 )
+
+###############
+# Ectane Node #
+###############
 
 set(OTHER_SRC_FILES
      src/ectane_handler.cpp
@@ -214,6 +228,29 @@ if(ENABLE_CLANGTIDY)
   set_target_properties(${EXECUTABLE_NAME} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
 endif(ENABLE_CLANGTIDY)
 
+###################
+# Pointcloud Node #
+###################
+
+set(EXECUTABLE_NAME ec_data_to_pointcloud_node)
+set(EXECUTABLE_SRC src/ec_data_to_pointcloud_node.cpp)
+
+add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SRC})
+# add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SRC} ${OTHER_SRC_FILES})
+add_dependencies(${EXECUTABLE_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES})
+
+#######################
+# Reconstruction Node #
+#######################
+
+set(EXECUTABLE_NAME reconstruction_node)
+set(EXECUTABLE_SRC src/reconstruction_node.cpp)
+
+add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SRC})
+# add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SRC} ${OTHER_SRC_FILES})
+add_dependencies(${EXECUTABLE_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES})
 
 ################################################
 ## Specify additional locations of header files
