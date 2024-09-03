@@ -16,7 +16,7 @@
     ##########################################
     -->
     <arg name="configuration" default="lf_probe_axial_and_transversal_1_channel" />
-    <arg name="rviz" default="true" />
+    <arg name="rviz" default="false" />
 
     <group ns="ectane">        
         <!-- Basic Configuration -->

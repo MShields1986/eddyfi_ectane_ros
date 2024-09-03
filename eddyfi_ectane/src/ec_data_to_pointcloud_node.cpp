@@ -22,7 +22,8 @@ EcDataToPointCloudNode::EcDataToPointCloudNode(bool* kill_now)
 
 void EcDataToPointCloudNode::ectaneCallback(const eddyfi_ectane::Observation::ConstPtr& msg) {
     // Dummy TF broadcaster
-    // TODO: Delete in final version
+    // TODO: Delete in final version or create off-robot mode
+    /*
     static tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
 
@@ -43,10 +44,8 @@ void EcDataToPointCloudNode::ectaneCallback(const eddyfi_ectane::Observation::Co
     br.sendTransform(transformStamped);
 
     x_ += 0.001;
-    /*
-    if (x_ > 1.0) {
-        x_ = 0.0;
-    }*/
+    */
+
 
     // Axial setup
     sensor_msgs::PointCloud axial_point_cloud;

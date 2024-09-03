@@ -12,7 +12,7 @@ ReconstructionNode::ReconstructionNode(bool* kill_now)
        transversal_subscriber_(nh_.subscribe(ns_ + "/transversal_data_at_probe", 1, &ReconstructionNode::transversalCallback, this)),
        axial_publisher_(nh_.advertise<sensor_msgs::PointCloud>(ns_ + "/axial_reconstruction", 10, true)),
        transversal_publisher_(nh_.advertise<sensor_msgs::PointCloud>(ns_ + "/transversal_reconstruction", 10, true)),
-       recon_frame_id_("map"),  // TODO: Use a param
+       recon_frame_id_("fixture_1"),  // TODO: Use a param
        tfListener_(tfBuffer_)
 {
     axial_point_cloud_.header.frame_id = recon_frame_id_;
