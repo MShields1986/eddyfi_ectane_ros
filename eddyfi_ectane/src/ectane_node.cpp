@@ -306,8 +306,8 @@ void EctaneNode::populateEcData() {
 
         //reading = std::polar(std::abs(reading), std::arg(reading) + 3.14159 / 2);
 
-        //double shift(3.14159 / 2);
-        double shift(0.0);
+        double shift(3.14159 / 2);
+        //double shift(0.0);
         double mag = std::abs(reading);
         double theta = std::arg(reading) + shift;
         reading = std::complex(mag * cos(theta), mag * sin(theta));
