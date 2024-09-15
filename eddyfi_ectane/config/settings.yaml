@@ -1,6 +1,9 @@
-settings:
-  ectane_address: "192.168.2.35"
-  acquisition_rate: 50
-  gain: 23
-  frequency: 50000 # Always 50kHz for lf_probe_axial_1_channel no matter what you set here...
-  voltage: 7
+# Basic settings
+ectane_address: "192.168.2.35"
+acquisition_rate: 50
+gain: 23
+frequency: 50000 # Always 50kHz for lf_probe_axial_1_channel no matter what you set here...
+voltage: 7
+# No robot mode settings
+no_robot_extrinsic_frame_id: "fixture_1"
+no_robot_x_pos_incrememnt: 0.001

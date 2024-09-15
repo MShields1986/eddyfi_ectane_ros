@@ -10,34 +10,59 @@ ReconstructionNode::ReconstructionNode(bool* kill_now)
        ns_(ros::this_node::getNamespace()),
        axial_subscriber_(nh_.subscribe(ns_ + "/axial_data_at_probe", 1, &ReconstructionNode::axialCallback, this)),
        transversal_subscriber_(nh_.subscribe(ns_ + "/transversal_data_at_probe", 1, &ReconstructionNode::transversalCallback, this)),
-       axial_publisher_(nh_.advertise<sensor_msgs::PointCloud>(ns_ + "/axial_reconstruction", 10, true)),
-       transversal_publisher_(nh_.advertise<sensor_msgs::PointCloud>(ns_ + "/transversal_reconstruction", 10, true)),
+       axial_publisher_(nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/axial_reconstruction", 10, true)),
+       transversal_publisher_(nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/transversal_reconstruction", 10, true)),
        recon_frame_id_("fixture_1"),  // TODO: Use a param
        tfListener_(tfBuffer_)
 {
+    axial_point_cloud_.header.stamp = ros::Time::now();
     axial_point_cloud_.header.frame_id = recon_frame_id_;
+
+    sensor_msgs::PointCloud2Modifier axial_modifier(axial_point_cloud_);
+    axial_modifier.setPointCloud2Fields(
+        5,
+        "x", 1, sensor_msgs::PointField::FLOAT32,               // 32 bits = 4 bytes
+        "y", 1, sensor_msgs::PointField::FLOAT32,
+        "z", 1, sensor_msgs::PointField::FLOAT32,
+        "Imaginary", 1, sensor_msgs::PointField::FLOAT32,
+        "Real", 1, sensor_msgs::PointField::FLOAT32
+        );
+
+    axial_point_cloud_.height = 1;
+    axial_point_cloud_.width = 0;
+    axial_point_cloud_.is_dense = true;
+    axial_point_cloud_.point_step = 20;                           // 5 fields * 4 bytes per field
+    axial_point_cloud_.row_step = axial_point_cloud_.point_step * axial_point_cloud_.width;
+    axial_point_cloud_.data.resize(axial_point_cloud_.row_step);
+
+    trans_point_cloud_.header.stamp = ros::Time::now();
     trans_point_cloud_.header.frame_id = recon_frame_id_;
 
-    axial_imaginary_channel_.name = "Imaginary";
-    axial_real_channel_.name = "Real";
+    sensor_msgs::PointCloud2Modifier trans_modifier(trans_point_cloud_);
+    trans_modifier.setPointCloud2Fields(
+        5,
+        "x", 1, sensor_msgs::PointField::FLOAT32,               // 32 bits = 4 bytes
+        "y", 1, sensor_msgs::PointField::FLOAT32,
+        "z", 1, sensor_msgs::PointField::FLOAT32,
+        "Imaginary", 1, sensor_msgs::PointField::FLOAT32,
+        "Real", 1, sensor_msgs::PointField::FLOAT32
+        );
 
-    trans_imaginary_channel_.name = "Imaginary";
-    trans_real_channel_.name = "Real";
+    trans_point_cloud_.height = 1;
+    trans_point_cloud_.width = 0;
+    trans_point_cloud_.is_dense = true;
+    trans_point_cloud_.point_step = 20;                           // 5 fields * 4 bytes per field
+    trans_point_cloud_.row_step = trans_point_cloud_.point_step * trans_point_cloud_.width;
+    trans_point_cloud_.data.resize(trans_point_cloud_.row_step);
+
+    trans_point_cloud_.header.frame_id = recon_frame_id_;
 }
 
 
-void ReconstructionNode::axialCallback(const sensor_msgs::PointCloud::ConstPtr& msg) {
+void ReconstructionNode::axialCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
     axial_point_cloud_.header.stamp = msg->header.stamp;
 
-    sensor_msgs::PointCloud transformed_pointcloud;
-
-    sensor_msgs::PointCloud2 input_pointcloud2;
     sensor_msgs::PointCloud2 output_pointcloud2;
-
-    sensor_msgs::convertPointCloudToPointCloud2(
-        *msg,
-        input_pointcloud2
-    );
 
     try {
         trans_ = tfBuffer_.lookupTransform(
@@ -47,35 +72,16 @@ void ReconstructionNode::axialCallback(const sensor_msgs::PointCloud::ConstPtr& 
           ros::Duration(1.0)
           );
 
-        tf2::doTransform<sensor_msgs::PointCloud2>(input_pointcloud2, output_pointcloud2, trans_);
+        tf2::doTransform<sensor_msgs::PointCloud2>(*msg, output_pointcloud2, trans_);
 
-        sensor_msgs::convertPointCloud2ToPointCloud(
-            output_pointcloud2,
-            transformed_pointcloud
-        );
+        axial_point_cloud_.width += output_pointcloud2.width;
+        uint64_t prev_size = axial_point_cloud_.data.size();
+        axial_point_cloud_.data.resize(axial_point_cloud_.data.size() + output_pointcloud2.data.size());
 
-        axial_point_cloud_.points.insert(
-            axial_point_cloud_.points.end(), 
-            transformed_pointcloud.points.begin(), 
-            transformed_pointcloud.points.end()
-            );
-
-        // TODO:: Validate channel 0 and channel 1 on their names (maybe loop over channels and if the name is Real or Imag...)
-        axial_imaginary_channel_.values.insert(
-            axial_imaginary_channel_.values.end(), 
-            msg->channels[0].values.begin(), 
-            msg->channels[0].values.end()
-            );
-
-        axial_real_channel_.values.insert(
-            axial_real_channel_.values.end(), 
-            msg->channels[1].values.begin(), 
-            msg->channels[1].values.end()
-            );
-
-        axial_point_cloud_.channels.clear();
-        axial_point_cloud_.channels.push_back(axial_imaginary_channel_);
-        axial_point_cloud_.channels.push_back(axial_real_channel_);
+        std::copy(
+            output_pointcloud2.data.begin(),
+            output_pointcloud2.data.end(),
+            axial_point_cloud_.data.begin() + prev_size);
 
         axial_publisher_.publish(axial_point_cloud_);
 
@@ -85,18 +91,10 @@ void ReconstructionNode::axialCallback(const sensor_msgs::PointCloud::ConstPtr& 
 }
 
 
-void ReconstructionNode::transversalCallback(const sensor_msgs::PointCloud::ConstPtr& msg) {
+void ReconstructionNode::transversalCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
     trans_point_cloud_.header.stamp = msg->header.stamp;
 
-    sensor_msgs::PointCloud transformed_pointcloud;
-
-    sensor_msgs::PointCloud2 input_pointcloud2;
     sensor_msgs::PointCloud2 output_pointcloud2;
-
-    sensor_msgs::convertPointCloudToPointCloud2(
-        *msg,
-        input_pointcloud2
-    );
 
     try {
         trans_ = tfBuffer_.lookupTransform(
@@ -106,35 +104,16 @@ void ReconstructionNode::transversalCallback(const sensor_msgs::PointCloud::Cons
           ros::Duration(1.0)
           );
 
-        tf2::doTransform<sensor_msgs::PointCloud2>(input_pointcloud2, output_pointcloud2, trans_);
+        tf2::doTransform<sensor_msgs::PointCloud2>(*msg, output_pointcloud2, trans_);
 
-        sensor_msgs::convertPointCloud2ToPointCloud(
-            output_pointcloud2,
-            transformed_pointcloud
-        );
+        trans_point_cloud_.width += output_pointcloud2.width;
+        uint64_t prev_size = trans_point_cloud_.data.size();
+        trans_point_cloud_.data.resize(trans_point_cloud_.data.size() + output_pointcloud2.data.size());
 
-        trans_point_cloud_.points.insert(
-            trans_point_cloud_.points.end(), 
-            transformed_pointcloud.points.begin(), 
-            transformed_pointcloud.points.end()
-            );
-
-        // TODO:: Validate channel 0 and channel 1 on their names (maybe loop over channels and if the name is Real or Imag...)
-        trans_imaginary_channel_.values.insert(
-            trans_imaginary_channel_.values.end(), 
-            msg->channels[0].values.begin(), 
-            msg->channels[0].values.end()
-            );
-
-        trans_real_channel_.values.insert(
-            trans_real_channel_.values.end(), 
-            msg->channels[1].values.begin(), 
-            msg->channels[1].values.end()
-            );
-
-        trans_point_cloud_.channels.clear();
-        trans_point_cloud_.channels.push_back(trans_imaginary_channel_);
-        trans_point_cloud_.channels.push_back(trans_real_channel_);
+        std::copy(
+            output_pointcloud2.data.begin(),
+            output_pointcloud2.data.end(),
+            trans_point_cloud_.data.begin() + prev_size);
 
         transversal_publisher_.publish(trans_point_cloud_);
 

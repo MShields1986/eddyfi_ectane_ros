@@ -23,15 +23,12 @@
 
     <group ns="ectane">
         <!-- Basic Configuration -->
-        <param name="settings/configuration" type="string" value="$(arg configuration)" />
-        <rosparam file="$(find eddyfi_ectane)/config/simulated_ectane_mode.yaml" command="load" if="$(eval configuration == 'example')" />
-        <rosparam file="$(find eddyfi_ectane)/config/settings.yaml" command="load" unless="$(eval configuration == 'example')" />
-
-        <rosparam ns="settings" if="$(arg no_robot_mode)">
-            no_robot: true
-            no_robot_extrinsic_frame_id: "fixture_1"
-            no_robot_x_pos_incrememnt: 0.001
-        </rosparam>
+        <group ns="settings">
+            <param name="configuration" type="string" value="$(arg configuration)" />
+            <param name="no_robot" type="bool" value="$(arg no_robot_mode)" />
+            <rosparam file="$(find eddyfi_ectane)/config/settings.yaml" command="load" unless="$(eval configuration == 'example')" />
+            <rosparam file="$(find eddyfi_ectane)/config/simulated_ectane_mode_settings.yaml" command="load" if="$(eval configuration == 'example')" />
+        </group>
         
         <!-- Crosstalk Rectification Configuration -->
         <rosparam file="$(find eddyfi_ectane)/config/probes/crosstalk_$(arg configuration).yaml" command="load" unless="$(eval configuration == 'example')" />
@@ -72,7 +69,7 @@
         <!-- EC Data to Pointcloud at Array -->
         <node pkg="eddyfi_ectane" type="ec_data_to_pointcloud_node" name="ec_data_to_pointcloud_node" output="screen"/>
 
-        <!-- Launch Visualisation/ Reconstruction Node -->
+        <!-- Launch Reconstruction Node -->
         <node pkg="eddyfi_ectane" type="reconstruction_node" name="reconstruction_node" output="screen"/>
     </group>
 

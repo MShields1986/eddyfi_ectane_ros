@@ -6,13 +6,16 @@
 #include <ros/ros.h>
 
 #include <std_msgs/Header.h>
-#include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/PointField.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
 
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
 
 #include "eddyfi_ectane/Observation.h"
+
 
 class EcDataToPointCloudNode
 {

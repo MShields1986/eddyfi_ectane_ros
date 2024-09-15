@@ -9,10 +9,10 @@ EcDataToPointCloudNode::EcDataToPointCloudNode(bool* kill_now)
        node_name_(ros::this_node::getName()),
        ns_(ros::this_node::getNamespace()),
        subscriber_(nh_.subscribe(ns_ + "/eddy_current_data", 1, &EcDataToPointCloudNode::ectaneCallback, this)),
-       axial_publisher_(nh_.advertise<sensor_msgs::PointCloud>(ns_ + "/axial_data_at_probe", 10, true)),
-       transversal_publisher_(nh_.advertise<sensor_msgs::PointCloud>(ns_ + "/transversal_data_at_probe", 10, true)),
+       axial_publisher_(nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/axial_data_at_probe", 10, true)),
+       transversal_publisher_(nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/transversal_data_at_probe", 10, true)),
        no_robot_(false),
-       no_robot_extrinsic_frame_id_("map"),
+       no_robot_extrinsic_frame_id_(""),
        no_robot_x_pos_incrememnt_(0.0),
        no_robot_x_pos_(0.0)
 {
@@ -36,58 +36,117 @@ void EcDataToPointCloudNode::paramHandler(std::string param_name, ParamType& par
 
 
 void EcDataToPointCloudNode::ectaneCallback(const eddyfi_ectane::Observation::ConstPtr& msg) {
+    // TODO: Work on removing repeated code here
+    // TODO: Look at what can be instanstiated elsewhere
+
     // Update dummy TF broadcaster
     if (no_robot_) {
         updateNoRobotTf(msg);
     }
 
+    int num_axials = 0;
+    int num_transversals = 0;
+
+    // TODO: Find a faster way to count the number of axials and transversals
+    for (const auto& channel : msg->channels) {
+        if (channel.name.find("A") != std::string::npos) {
+            num_axials++;
+        } else if (channel.name.find("T") != std::string::npos) {
+            num_transversals++;
+        }
+    }
+    ROS_INFO_STREAM(node_name_ << ": Number of axials: " << num_axials);
+    ROS_INFO_STREAM(node_name_ << ": Number of transversals: " << num_transversals);
+
     // Axial setup
-    sensor_msgs::PointCloud axial_point_cloud;
+    sensor_msgs::PointCloud2 axial_point_cloud;
     axial_point_cloud.header.stamp = msg->header.stamp;
     axial_point_cloud.header.frame_id = msg->header.frame_id;
 
-    sensor_msgs::ChannelFloat32 axial_imaginary_channel;
-    sensor_msgs::ChannelFloat32 axial_real_channel;
-    axial_imaginary_channel.name = "Imaginary";
-    axial_real_channel.name = "Real";
+    sensor_msgs::PointCloud2Modifier axial_modifier(axial_point_cloud);
+    axial_modifier.setPointCloud2Fields(
+        5,
+        "x", 1, sensor_msgs::PointField::FLOAT32,               // 32 bits = 4 bytes
+        "y", 1, sensor_msgs::PointField::FLOAT32,
+        "z", 1, sensor_msgs::PointField::FLOAT32,
+        "Imaginary", 1, sensor_msgs::PointField::INT32,
+        "Real", 1, sensor_msgs::PointField::INT32
+        );
+
+    axial_point_cloud.height = 1;
+    axial_point_cloud.width = num_axials;
+    axial_point_cloud.is_dense = true;
+    axial_point_cloud.point_step = 20;                           // 5 fields * 4 bytes per field
+    axial_point_cloud.row_step = axial_point_cloud.point_step * axial_point_cloud.width;
+    axial_point_cloud.data.resize(axial_point_cloud.row_step);
 
     // Transversal setup
-    sensor_msgs::PointCloud trans_point_cloud;
+    sensor_msgs::PointCloud2 trans_point_cloud;
     trans_point_cloud.header.stamp = msg->header.stamp;
     trans_point_cloud.header.frame_id = msg->header.frame_id;
 
-    sensor_msgs::ChannelFloat32 trans_imaginary_channel;
-    sensor_msgs::ChannelFloat32 trans_real_channel;
-    trans_imaginary_channel.name = "Imaginary";
-    trans_real_channel.name = "Real";
+    sensor_msgs::PointCloud2Modifier trans_modifier(trans_point_cloud);
+    trans_modifier.setPointCloud2Fields(
+        5,
+        "x", 1, sensor_msgs::PointField::FLOAT32,               // 32 bits = 4 bytes
+        "y", 1, sensor_msgs::PointField::FLOAT32,
+        "z", 1, sensor_msgs::PointField::FLOAT32,
+        "Imaginary", 1, sensor_msgs::PointField::INT32,
+        "Real", 1, sensor_msgs::PointField::INT32
+        );
+
+    trans_point_cloud.height = 1;
+    trans_point_cloud.width = num_transversals;
+    trans_point_cloud.is_dense = true;
+    trans_point_cloud.point_step = 20;                           // 5 fields * 4 bytes per field
+    trans_point_cloud.row_step = trans_point_cloud.point_step * trans_point_cloud.width;
+    trans_point_cloud.data.resize(trans_point_cloud.row_step);
+
+    // Iterators
+    sensor_msgs::PointCloud2Iterator<float>      axialIterX(axial_point_cloud, "x");
+    sensor_msgs::PointCloud2Iterator<float>      axialIterY(axial_point_cloud, "y");
+    sensor_msgs::PointCloud2Iterator<float>      axialIterZ(axial_point_cloud, "z");
+    sensor_msgs::PointCloud2Iterator<float>    axialIterImaginary(axial_point_cloud, "Imaginary");
+    sensor_msgs::PointCloud2Iterator<float>    axialIterReal(axial_point_cloud, "Real");
+
+    sensor_msgs::PointCloud2Iterator<float>      transIterX(trans_point_cloud, "x");
+    sensor_msgs::PointCloud2Iterator<float>      transIterY(trans_point_cloud, "y");
+    sensor_msgs::PointCloud2Iterator<float>      transIterZ(trans_point_cloud, "z");
+    sensor_msgs::PointCloud2Iterator<float>    transIterImaginary(trans_point_cloud, "Imaginary");
+    sensor_msgs::PointCloud2Iterator<float>    transIterReal(trans_point_cloud, "Real");
+
+    //int32_t
 
     for (const auto& channel : msg->channels) {
-        if (channel.name.find("A") != std::string::npos) {
-            geometry_msgs::Point32 point;
-            point.x = channel.x_position / 1000;
-            point.y = channel.y_position / 1000;
-            point.z = 0.0;
-            axial_point_cloud.points.push_back(point);
-            axial_imaginary_channel.values.push_back(channel.imaginary_reading);
-            axial_real_channel.values.push_back(channel.real_reading);
-        } else if (channel.name.find("T") != std::string::npos) {
-            geometry_msgs::Point32 point;
-            point.x = channel.x_position / 1000;
-            point.y = channel.y_position / 1000;
-            point.z = 0.0;
-            trans_point_cloud.points.push_back(point);
 
-            trans_imaginary_channel.values.push_back(channel.imaginary_reading);
-            trans_real_channel.values.push_back(channel.real_reading);
+        if (channel.name.find("A") != std::string::npos) {
+            *axialIterX = channel.x_position / 1000;                // mm to m
+            *axialIterY = channel.y_position / 1000;                // mm to m
+            *axialIterZ = 0.0;
+            *axialIterImaginary = channel.imaginary_reading;
+            *axialIterReal = channel.real_reading;
+
+            ++axialIterX;
+            ++axialIterY;
+            ++axialIterZ;
+            ++axialIterImaginary;
+            ++axialIterReal;
+        } else if (channel.name.find("T") != std::string::npos) {
+            *transIterX = channel.x_position / 1000;                // mm to m
+            *transIterY = channel.y_position / 1000;                // mm to m
+            *transIterZ = 0.0;
+            *transIterImaginary = channel.imaginary_reading;
+            *transIterReal = channel.real_reading;
+
+            ++transIterX;
+            ++transIterY;
+            ++transIterZ;
+            ++transIterImaginary;
+            ++transIterReal;
         }
     }
-
-    axial_point_cloud.channels.push_back(axial_imaginary_channel);
-    axial_point_cloud.channels.push_back(axial_real_channel);
+    
     axial_publisher_.publish(axial_point_cloud);
-
-    trans_point_cloud.channels.push_back(trans_imaginary_channel);
-    trans_point_cloud.channels.push_back(trans_real_channel);
     transversal_publisher_.publish(trans_point_cloud);
 }
 

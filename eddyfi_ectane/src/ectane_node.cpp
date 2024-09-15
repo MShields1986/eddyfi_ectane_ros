@@ -307,8 +307,8 @@ void EctaneNode::populateEcData() {
         double theta = std::arg(reading) + shift;
         reading = std::complex(mag * cos(theta), mag * sin(theta));
 
-        ec_data_.channels[i].imaginary_reading = std::imag(reading);
-        ec_data_.channels[i].real_reading = std::real(reading);
+        ec_data_.channels[i].imaginary_reading = (float)std::imag(reading);
+        ec_data_.channels[i].real_reading = (float)std::real(reading);
 
         i++;
     }
