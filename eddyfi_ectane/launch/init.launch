@@ -4,7 +4,7 @@
     ##########################################
     #         Configuration Options          #
     ##########################################
-    example                                   - No configs for this and not handled well in ectane_node.cpp
+    example                                   - Intended for testing with simulated Ectane only
     hf_probe_axial_1_channel
     hf_probe_transversal_1_channel
     hf_probe_axial_and_transversal_1_channel
@@ -16,14 +16,22 @@
     ##########################################
     -->
     <arg name="configuration" default="lf_probe_axial_and_transversal_1_channel" />
-    <arg name="rviz" default="false" />
+    <arg name="no_robot_mode" default="false" />
 
-    <group ns="ectane">        
+    <arg name="rviz" default="false" unless="$(arg no_robot_mode)"/>
+    <arg name="rviz" default="true" if="$(arg no_robot_mode)"/>
+
+    <group ns="ectane">
         <!-- Basic Configuration -->
         <param name="settings/configuration" type="string" value="$(arg configuration)" />
-        <rosparam file="$(find eddyfi_ectane)/config/offline_mode.yaml" command="load" if="$(eval configuration == 'example')" />
+        <rosparam file="$(find eddyfi_ectane)/config/simulated_ectane_mode.yaml" command="load" if="$(eval configuration == 'example')" />
         <rosparam file="$(find eddyfi_ectane)/config/settings.yaml" command="load" unless="$(eval configuration == 'example')" />
-        <rosparam file="$(find eddyfi_ectane)/config/offline_mode.yaml" command="load" if="$(eval configuration == 'example')" />
+
+        <rosparam ns="settings" if="$(arg no_robot_mode)">
+            no_robot: true
+            no_robot_extrinsic_frame_id: "fixture_1"
+            no_robot_x_pos_incrememnt: 0.001
+        </rosparam>
         
         <!-- Crosstalk Rectification Configuration -->
         <rosparam file="$(find eddyfi_ectane)/config/probes/crosstalk_$(arg configuration).yaml" command="load" unless="$(eval configuration == 'example')" />

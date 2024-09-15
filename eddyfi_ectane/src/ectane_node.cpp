@@ -128,12 +128,12 @@ void EctaneNode::getChannelNamespaces() {
         if (entry.find(geom_param_prefix_) != std::string::npos) {
             std::string tmp;
             tmp = entry.substr(geom_param_prefix_.size());         // Remove the namespace prefix
-            tmp = tmp.substr(0, tmp.find("/") + 1);               // Remove anything under the channel namespace
+            tmp = tmp.substr(0, tmp.find("/") + 1);                // Remove anything under the channel namespace
             channels_from_geom_params.push_back(tmp);
         } else if (entry.find(crosstalk_param_prefix_) != std::string::npos) {
             std::string tmp;
             tmp = entry.substr(crosstalk_param_prefix_.size());    // Remove the namespace prefix
-            tmp = tmp.substr(0, tmp.find("/") + 1);               // Remove anything under the channel namespace
+            tmp = tmp.substr(0, tmp.find("/") + 1);                // Remove anything under the channel namespace
             channels_from_crosstalk_param.push_back(tmp);
         }
     }
@@ -300,12 +300,7 @@ void EctaneNode::populateEcData() {
         //std::complex<int> reading(std::get<6>(entry), std::get<5>(entry));
         std::complex<double> reading((double)std::get<6>(entry), (double)std::get<5>(entry));
 
-        //######################################################################
-        // TODO: Need to phase rotate the reading
-        //######################################################################
-
-        //reading = std::polar(std::abs(reading), std::arg(reading) + 3.14159 / 2);
-
+        // TODO: Need to appropriately phase rotate the reading
         double shift(3.14159 / 2);
         //double shift(0.0);
         double mag = std::abs(reading);
@@ -314,9 +309,6 @@ void EctaneNode::populateEcData() {
 
         ec_data_.channels[i].imaginary_reading = std::imag(reading);
         ec_data_.channels[i].real_reading = std::real(reading);
-
-        //ec_data_.channels[i].imaginary_reading = std::get<5>(entry);
-        //ec_data_.channels[i].real_reading = std::get<6>(entry);
 
         i++;
     }

@@ -1,9 +1,6 @@
 #include "ec_data_to_pointcloud_node.h"
 
-// TODO: Delete in final version
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <geometry_msgs/TransformStamped.h>
+
 
 EcDataToPointCloudNode::EcDataToPointCloudNode(bool* kill_now)
      : nh_(),
@@ -14,43 +11,40 @@ EcDataToPointCloudNode::EcDataToPointCloudNode(bool* kill_now)
        subscriber_(nh_.subscribe(ns_ + "/eddy_current_data", 1, &EcDataToPointCloudNode::ectaneCallback, this)),
        axial_publisher_(nh_.advertise<sensor_msgs::PointCloud>(ns_ + "/axial_data_at_probe", 10, true)),
        transversal_publisher_(nh_.advertise<sensor_msgs::PointCloud>(ns_ + "/transversal_data_at_probe", 10, true)),
-       x_(0.0) // TODO: Delete in final version
+       no_robot_(false),
+       no_robot_extrinsic_frame_id_("map"),
+       no_robot_x_pos_incrememnt_(0.0),
+       no_robot_x_pos_(0.0)
 {
+    EcDataToPointCloudNode::paramHandler(ns_ + "/settings/no_robot", no_robot_);
+    EcDataToPointCloudNode::paramHandler(ns_ + "/settings/no_robot_extrinsic_frame_id", no_robot_extrinsic_frame_id_);
+    EcDataToPointCloudNode::paramHandler(ns_ + "/settings/no_robot_x_pos_incrememnt", no_robot_x_pos_incrememnt_);
+}
 
+
+template <typename ParamType>
+void EcDataToPointCloudNode::paramHandler(std::string param_name, ParamType& param_value) {
+    while (!nh_.hasParam(param_name) and !*kill_now_) {
+        ROS_INFO_STREAM_THROTTLE(10, node_name_ << ": Waiting for parameter " << param_name);
+        ros::spinOnce();
+        rate_.sleep();
+    }
+    nh_.getParam(param_name, param_value);
+    ROS_DEBUG_STREAM(node_name_ << ": Read in parameter " << param_name << " = " << param_value);
+    //return param_value;
 }
 
 
 void EcDataToPointCloudNode::ectaneCallback(const eddyfi_ectane::Observation::ConstPtr& msg) {
-    // Dummy TF broadcaster
-    // TODO: Delete in final version or create off-robot mode
-    /*
-    static tf2_ros::TransformBroadcaster br;
-    geometry_msgs::TransformStamped transformStamped;
-
-    transformStamped.header.stamp = msg->header.stamp;
-    transformStamped.header.frame_id = "map";
-    transformStamped.child_frame_id = msg->header.frame_id;
-    //transformStamped.child_frame_id = "ectane"; // TODO: Remove this when you log some fresh data
-    transformStamped.transform.translation.x = x_;
-    transformStamped.transform.translation.y = 0.0;
-    transformStamped.transform.translation.z = 0.0;
-    tf2::Quaternion q;
-    q.setRPY(0, 0, 0);
-    transformStamped.transform.rotation.x = q.x();
-    transformStamped.transform.rotation.y = q.y();
-    transformStamped.transform.rotation.z = q.z();
-    transformStamped.transform.rotation.w = q.w();
-
-    br.sendTransform(transformStamped);
-
-    x_ += 0.001;
-    */
-
+    // Update dummy TF broadcaster
+    if (no_robot_) {
+        updateNoRobotTf(msg);
+    }
 
     // Axial setup
     sensor_msgs::PointCloud axial_point_cloud;
     axial_point_cloud.header.stamp = msg->header.stamp;
-    axial_point_cloud.header.frame_id = "ectane";
+    axial_point_cloud.header.frame_id = msg->header.frame_id;
 
     sensor_msgs::ChannelFloat32 axial_imaginary_channel;
     sensor_msgs::ChannelFloat32 axial_real_channel;
@@ -60,7 +54,7 @@ void EcDataToPointCloudNode::ectaneCallback(const eddyfi_ectane::Observation::Co
     // Transversal setup
     sensor_msgs::PointCloud trans_point_cloud;
     trans_point_cloud.header.stamp = msg->header.stamp;
-    trans_point_cloud.header.frame_id = "ectane";
+    trans_point_cloud.header.frame_id = msg->header.frame_id;
 
     sensor_msgs::ChannelFloat32 trans_imaginary_channel;
     sensor_msgs::ChannelFloat32 trans_real_channel;
@@ -95,6 +89,28 @@ void EcDataToPointCloudNode::ectaneCallback(const eddyfi_ectane::Observation::Co
     trans_point_cloud.channels.push_back(trans_imaginary_channel);
     trans_point_cloud.channels.push_back(trans_real_channel);
     transversal_publisher_.publish(trans_point_cloud);
+}
+
+
+void EcDataToPointCloudNode::updateNoRobotTf(const eddyfi_ectane::Observation::ConstPtr& msg) {
+    geometry_msgs::TransformStamped transformStamped;
+
+    transformStamped.header.stamp = msg->header.stamp;
+    transformStamped.header.frame_id = no_robot_extrinsic_frame_id_;
+    transformStamped.child_frame_id = msg->header.frame_id;
+    transformStamped.transform.translation.x = no_robot_x_pos_;
+    transformStamped.transform.translation.y = 0.0;
+    transformStamped.transform.translation.z = 0.0;
+    tf2::Quaternion q;
+    q.setRPY(0, 0, 0);
+    transformStamped.transform.rotation.x = q.x();
+    transformStamped.transform.rotation.y = q.y();
+    transformStamped.transform.rotation.z = q.z();
+    transformStamped.transform.rotation.w = q.w();
+
+    br_.sendTransform(transformStamped);
+
+    no_robot_x_pos_ += no_robot_x_pos_incrememnt_;
 }
 
 

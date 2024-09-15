@@ -8,6 +8,10 @@
 #include <std_msgs/Header.h>
 #include <sensor_msgs/PointCloud.h>
 
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <geometry_msgs/TransformStamped.h>
+
 #include "eddyfi_ectane/Observation.h"
 
 class EcDataToPointCloudNode
@@ -18,7 +22,11 @@ public:
     void                              run();
 
 private:
+    template <typename ParamType>
+    void                              paramHandler(std::string param_name, ParamType& param_value);
+
     void                              ectaneCallback(const eddyfi_ectane::Observation::ConstPtr& msg);
+    void                              updateNoRobotTf(const eddyfi_ectane::Observation::ConstPtr& msg);
 
     ros::NodeHandle                   nh_;
     ros::Rate                         rate_;
@@ -30,5 +38,10 @@ private:
     ros::Publisher                    axial_publisher_;
     ros::Publisher                    transversal_publisher_;
 
-    float                             x_; // TODO: Delete in final version
+    bool                              no_robot_;
+    std::string                       no_robot_extrinsic_frame_id_;
+    float                             no_robot_x_pos_incrememnt_;
+    float                             no_robot_x_pos_;
+    tf2_ros::TransformBroadcaster     br_;
+
 };
