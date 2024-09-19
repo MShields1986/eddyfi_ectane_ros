@@ -4,6 +4,8 @@
 #include <algorithm>
 
 #include <ros/ros.h>
+#include <nodelet/nodelet.h>
+#include <pluginlib/class_list_macros.h>
 
 #include <std_msgs/Header.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -17,14 +19,16 @@
 #include "eddyfi_ectane/Observation.h"
 
 
-class EcDataToPointCloudNode
+namespace ec_data_to_pointcloud_namespace {
+
+class EcDataToPointCloudNodelet : public nodelet::Nodelet
 {
 public:
-    explicit EcDataToPointCloudNode(bool* kill_now);
-
-    void                              run();
+    explicit EcDataToPointCloudNodelet();
 
 private:
+    virtual void                      onInit();
+
     template <typename ParamType>
     void                              paramHandler(std::string param_name, ParamType& param_value);
 
@@ -32,8 +36,6 @@ private:
     void                              updateNoRobotTf(const eddyfi_ectane::Observation::ConstPtr& msg);
 
     ros::NodeHandle                   nh_;
-    ros::Rate                         rate_;
-    bool*                             kill_now_;
     std::string                       node_name_;
     std::string                       ns_;
 
@@ -48,3 +50,5 @@ private:
     tf2_ros::TransformBroadcaster     br_;
 
 };
+
+} // namespace ec_data_to_pointcloud_namespace

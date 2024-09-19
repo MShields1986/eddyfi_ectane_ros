@@ -62,8 +62,14 @@ endif(ENABLE_CPPCHECK)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+
+find_package(Boost 1.71.0 REQUIRED COMPONENTS system)
+find_package(Threads REQUIRED)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  nodelet
+  pluginlib
   message_generation
 
   std_msgs
@@ -176,9 +182,11 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES eddyfi_ectane
+  LIBRARIES ${PROJECT_NAME}_nodelets
   CATKIN_DEPENDS  
-    roscpp 
+    roscpp
+    nodelet
+    pluginlib
     message_runtime 
 
     std_msgs 
@@ -203,6 +211,26 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
 )
+
+###################
+# Nodelet Library #
+###################
+
+add_library(
+  ${PROJECT_NAME}_nodelets
+  src/tcp_server_boost.cpp
+  src/ectane_handler.cpp
+  src/ectane_nodelet.cpp
+  src/ec_data_to_pointcloud_nodelet.cpp
+  src/reconstruction_nodelet.cpp
+)
+
+add_dependencies(${PROJECT_NAME}_nodelets ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}_nodelets
+  ${catkin_LIBRARIES}
+  Boost::system
+  Threads::Threads
+  )
 
 ###############
 # Ectane Node #
