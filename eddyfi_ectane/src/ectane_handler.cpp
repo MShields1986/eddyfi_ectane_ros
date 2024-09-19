@@ -2,17 +2,8 @@
 
 
 
-EctaneHandler::EctaneHandler(
-    std::string ectane_address,
-    Configurations configuration,
-    int32_t acquisition_rate,
-    int32_t gain,
-    int32_t frequency,
-    float voltage
-    )
-     : // Ectane
-       ectane_address_(ectane_address),
-       ec_data_(), ec_data_ptr_(&ec_data_),
+EctaneHandler::EctaneHandler()
+    :  ec_data_(), ec_data_ptr_(&ec_data_),
 
        // C SDK Data Sender
        sender_address_("127.0.0.1"),
@@ -22,16 +13,32 @@ EctaneHandler::EctaneHandler(
        // C SDK State Command Listener
        recipient_address_("127.0.0.1"), 
        send_port_(24010),
-       sender_(recipient_address_, send_port_),
-
-       // Internal Representation of Command State
-       state_(State::do_nothing),
-       configuration_(configuration),
-       acquisition_rate_(acquisition_rate),
-       gain_(gain),
-       frequency_(frequency),
-       voltage_(voltage)
+       sender_(recipient_address_, send_port_)
 {
+}
+
+
+void EctaneHandler::setup(
+    std::string ectane_address,
+    Configurations configuration,
+    int32_t acquisition_rate,
+    int32_t gain,
+    int32_t frequency,
+    float voltage
+    )
+
+{
+    // Ectane
+    ectane_address_ = ectane_address;
+
+    // Internal Representation of Command State
+    state_ = State::do_nothing;
+    configuration_ = configuration;
+    acquisition_rate_ = acquisition_rate;
+    gain_ = gain;
+    frequency_ = frequency;
+    voltage_ = voltage;
+
     updateCommandPacket();
 }
 
