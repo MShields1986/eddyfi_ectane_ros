@@ -15,14 +15,16 @@
 class EctaneHandler
 {
 public:
-    explicit EctaneHandler(
-        std::string ectane_address,
-        Configurations configuration,
-        int32_t acquisition_rate,
-        int32_t gain,
-        int32_t frequency,
-        float voltage
-        );
+    explicit EctaneHandler();
+
+    void                            setup(std::string ectane_address,
+                                          Configurations configuration,
+                                          int32_t acquisition_rate,
+                                          int32_t gain,
+                                          int32_t frequency,
+                                          float voltage
+                                          );
+
 
     void                            readData();
 

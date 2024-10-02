@@ -63,14 +63,24 @@
             <rosparam file="$(find eddyfi_ectane)/config/probes/lf_transversal_geometry.yaml" command="load" />
         </group>
 
+        <!-- Nodelet Manager -->
+        <node pkg="nodelet" type="nodelet" name="ectane_nodelet_manager" args="manager" output="screen" />
+
         <!-- Launch Eddyfi Ectane Node -->
-        <node pkg="eddyfi_ectane" type="ectane_node" name="ectane_node" output="screen"/>
+        <node pkg="nodelet" type="nodelet" name="ectane_nodelet" 
+            args="load eddyfi_ectane/ectane_nodelet ectane_nodelet_manager">
+        </node>
 
         <!-- EC Data to Pointcloud at Array -->
-        <node pkg="eddyfi_ectane" type="ec_data_to_pointcloud_node" name="ec_data_to_pointcloud_node" output="screen"/>
+        <node pkg="nodelet" type="nodelet" name="ec_data_to_pointcloud_nodelet" 
+            args="load eddyfi_ectane/ec_data_to_pointcloud_nodelet ectane_nodelet_manager">
+        </node>
 
         <!-- Launch Reconstruction Node -->
-        <node pkg="eddyfi_ectane" type="reconstruction_node" name="reconstruction_node" output="screen"/>
+        <node pkg="nodelet" type="nodelet" name="reconstruction_nodelet" 
+            args="load eddyfi_ectane/reconstruction_nodelet ectane_nodelet_manager">
+        </node>
+
     </group>
 
     <!-- Rviz -->

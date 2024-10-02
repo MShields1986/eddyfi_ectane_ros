@@ -29,6 +29,8 @@ TcpServerBoost::TcpServerBoost(std::string ip_address, int port)
     acceptor_.bind( boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port_) );
     acceptor_.listen();
     acceptor_.accept(socket_);
+
+    //std::cout << "TCP Server hosted on " << ip_address_ << ":" << port_ << std::endl;
 }
 
 
