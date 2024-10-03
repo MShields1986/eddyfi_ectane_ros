@@ -30,7 +30,10 @@ private:
     void                              axialCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
     void                              transversalCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
 
+    void                              timerCb(const ros::TimerEvent& event);
+
     ros::NodeHandle                   nh_;
+    int32_t                           publish_rate_;
     std::string                       node_name_;
     std::string                       ns_;
 
@@ -39,6 +42,8 @@ private:
 
     ros::Publisher                    axial_publisher_;
     ros::Publisher                    transversal_publisher_;
+
+    ros::Timer                        timer_;
 
     sensor_msgs::PointCloud2          axial_point_cloud_; // TODO: Consider heap allocation
     sensor_msgs::PointCloud2          trans_point_cloud_; // TODO: Consider heap allocation

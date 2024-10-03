@@ -5,19 +5,27 @@
 namespace ec_data_to_pointcloud_namespace {
 
 EcDataToPointCloudNodelet::EcDataToPointCloudNodelet()
-   : ns_("/ectane")
+   : ns_("/ectane") // TODO: Figure out how to get this when using nodelets so it isn't hardcoded
 {
 }
 
 
 void EcDataToPointCloudNodelet::onInit()
 {
-    ros::NodeHandle &nh_ = getNodeHandle();
+    ros::NodeHandle &nh_ = getMTNodeHandle(); //getNodeHandle();
 
     node_name_ = getName();
     //ns_ = ros::this_node::getNamespace();
 
-    subscriber_ = nh_.subscribe(ns_ + "/eddy_current_data", 1, &EcDataToPointCloudNodelet::ectaneCallback, this);
+    // Work around to allow concurrent callbacks on the same topic
+    // By default you there is no concurrency on callbacks for each topic!
+    //ros::SubscribeOptions ops;
+    //ops.template init<std_msgs::String>(ns_ + "/eddy_current_data", 100, &EcDataToPointCloudNodelet::ectaneCallback, this);
+    //ops.allow_concurrent_callbacks = true;
+    //subscriber_ = nh_.subscribe(ops);
+
+    subscriber_ = nh_.subscribe(ns_ + "/eddy_current_data", 100, &EcDataToPointCloudNodelet::ectaneCallback, this);
+
     axial_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/axial_data_at_probe", 10, true);
     transversal_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/transversal_data_at_probe", 10, true);
     

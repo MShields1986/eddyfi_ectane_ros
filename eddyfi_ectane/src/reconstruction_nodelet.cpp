@@ -5,7 +5,8 @@
 namespace reconstruction_namespace {
 
 ReconstructionNodelet::ReconstructionNodelet()
- :  ns_("/ectane"),
+ :  publish_rate_(1),
+    ns_("/ectane"), // TODO: Figure out how to get this when using nodelets so it isn't hardcoded
     tfListener_(tfBuffer_)
 {
 }
@@ -13,15 +14,28 @@ ReconstructionNodelet::ReconstructionNodelet()
 
 void ReconstructionNodelet::onInit()
 {
-    ros::NodeHandle &nh_ = getNodeHandle();
+    ros::NodeHandle &nh_ = getMTNodeHandle(); //getNodeHandle();
     node_name_ = getName();
     //ns_ = ros::this_node::getNamespace();
-    axial_subscriber_ = nh_.subscribe(ns_ + "/axial_data_at_probe", 1, &ReconstructionNodelet::axialCallback, this);
-    transversal_subscriber_ = nh_.subscribe(ns_ + "/transversal_data_at_probe", 1, &ReconstructionNodelet::transversalCallback, this);
+
+    // Work around to allow concurrent callbacks on the same topic
+    // By default you there is no concurrency on callbacks for each topic!
+    //ros::SubscribeOptions ops;
+    //ops.template init<std_msgs::String>(ns_ + "/axial_data_at_probe", 100, &ReconstructionNodelet::axialCallback, this);
+    //ops.allow_concurrent_callbacks = true;
+    //axial_subscriber_ = nh_.subscribe(ops);
+
+    axial_subscriber_ = nh_.subscribe(ns_ + "/axial_data_at_probe", 100, &ReconstructionNodelet::axialCallback, this);
+    transversal_subscriber_ = nh_.subscribe(ns_ + "/transversal_data_at_probe", 100, &ReconstructionNodelet::transversalCallback, this);
+
     axial_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/axial_reconstruction", 10, true);
     transversal_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/transversal_reconstruction", 10, true);
+
+    // TODO: Param for the publish rate
+    //timer_ = nh_.createTimer(ros::Duration(1 / publish_rate_), &ReconstructionNodelet::timerCb, this);
+    timer_ = nh_.createTimer(ros::Duration(5), &ReconstructionNodelet::timerCb, this);
+
     recon_frame_id_ = "fixture_1";  // TODO: Use a param
-    //tfListener_(tfBuffer_);
 
     axial_point_cloud_.header.stamp = ros::Time::now();
     axial_point_cloud_.header.frame_id = recon_frame_id_;
@@ -91,8 +105,6 @@ void ReconstructionNodelet::axialCallback(const sensor_msgs::PointCloud2::ConstP
             output_pointcloud2.data.end(),
             axial_point_cloud_.data.begin() + prev_size);
 
-        axial_publisher_.publish(axial_point_cloud_);
-
     } catch (tf2::TransformException& ex) {
         NODELET_INFO_STREAM(node_name_ << ": Could not find transform " << recon_frame_id_ << " to " + msg->header.frame_id + ": " + ex.what());
     }
@@ -123,12 +135,19 @@ void ReconstructionNodelet::transversalCallback(const sensor_msgs::PointCloud2::
             output_pointcloud2.data.end(),
             trans_point_cloud_.data.begin() + prev_size);
 
-        transversal_publisher_.publish(trans_point_cloud_);
-
     } catch (tf2::TransformException& ex) {
         NODELET_INFO_STREAM(node_name_ << ": Could not find transform " << recon_frame_id_ << " to " + msg->header.frame_id + ": " + ex.what());
     }
 }
+
+
+void ReconstructionNodelet::timerCb(const ros::TimerEvent& event){
+    NODELET_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
+
+    axial_publisher_.publish(axial_point_cloud_);
+    transversal_publisher_.publish(trans_point_cloud_);
+}
+
 
 } // namespace reconstruction_namespace
 
