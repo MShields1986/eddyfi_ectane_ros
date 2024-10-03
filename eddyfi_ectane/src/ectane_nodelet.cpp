@@ -14,7 +14,7 @@ EctaneNodelet::EctaneNodelet()
 
 void EctaneNodelet::onInit()
 {
-    ros::NodeHandle &nh_ = getNodeHandle();
+    ros::NodeHandle &nh_ = getMTNodeHandle(); //getNodeHandle();
     node_name_ = getName();
     //ns_ = ros::this_node::getNamespace();
     geom_param_prefix_ = ns_ + "/geometry/";

@@ -8,11 +8,11 @@
     hf_probe_axial_1_channel
     hf_probe_transversal_1_channel
     hf_probe_axial_and_transversal_1_channel
-    hf_probe_axial_and_transversal_4_channels - NOT YET IMPLEMENTED IN ectane_node.cpp
+    hf_probe_axial_and_transversal_4_channels - NOT YET IMPLEMENTED IN ectane_nodelet.cpp
     lf_probe_axial_1_channel
     lf_probe_transversal_1_channel
     lf_probe_axial_and_transversal_1_channel
-    lf_probe_axial_and_transversal_4_channels - NOT YET IMPLEMENTED IN ectane_node.cpp
+    lf_probe_axial_and_transversal_4_channels - NOT YET IMPLEMENTED IN ectane_nodelet.cpp
     ##########################################
     -->
     <arg name="configuration" default="lf_probe_axial_and_transversal_1_channel" />
@@ -20,6 +20,10 @@
 
     <arg name="rviz" default="false" unless="$(arg no_robot_mode)"/>
     <arg name="rviz" default="true" if="$(arg no_robot_mode)"/>
+
+    <arg name="logging" default="true" />
+    <arg name="rosbag_name" default="ectane_recording" />
+    <arg name="rosbag_topics" default="[/tf,/ectane/eddy_current_data,/ectane/axial_reconstruction,/ectane/transversal_reconstruction]" />
 
     <group ns="ectane">
         <!-- Basic Configuration -->
@@ -63,22 +67,56 @@
             <rosparam file="$(find eddyfi_ectane)/config/probes/lf_transversal_geometry.yaml" command="load" />
         </group>
 
+
+
         <!-- Nodelet Manager -->
-        <node pkg="nodelet" type="nodelet" name="ectane_nodelet_manager" args="manager" output="screen" />
-
-        <!-- Launch Eddyfi Ectane Node -->
-        <node pkg="nodelet" type="nodelet" name="ectane_nodelet" 
-            args="load eddyfi_ectane/ectane_nodelet ectane_nodelet_manager">
+        <node pkg="nodelet" type="nodelet" name="ectane_nodelet_manager" args="manager" output="screen" >
+            <param name="num_worker_threads" value="32" />
         </node>
 
-        <!-- EC Data to Pointcloud at Array -->
+        <!-- Launch Eddyfi Ectane Nodelet
+             Threads:
+                2 services
+                1 publisher
+                1 spin (2 TCP connections which will need dedicated threads outside of nodelet pool) 
+            -->
+        <node pkg="nodelet" type="nodelet" name="ectane_handler_nodelet" 
+              args="load eddyfi_ectane/ectane_nodelet ectane_nodelet_manager">
+        </node>
+
+        <!-- EC Data to Pointcloud at Array Head Nodelet
+             Threads:
+                1 subscriber
+                1 publisher
+                1 spin 
+            -->
         <node pkg="nodelet" type="nodelet" name="ec_data_to_pointcloud_nodelet" 
-            args="load eddyfi_ectane/ec_data_to_pointcloud_nodelet ectane_nodelet_manager">
+              args="load eddyfi_ectane/ec_data_to_pointcloud_nodelet ectane_nodelet_manager">
         </node>
 
-        <!-- Launch Reconstruction Node -->
+        <!-- Reconstruction Nodelet
+             Threads:
+                1 subscriber
+                1 publisher
+                1 spin 
+            -->
         <node pkg="nodelet" type="nodelet" name="reconstruction_nodelet" 
-            args="load eddyfi_ectane/reconstruction_nodelet ectane_nodelet_manager">
+              args="load eddyfi_ectane/reconstruction_nodelet ectane_nodelet_manager">
+        </node>
+
+
+        <!-- Recording Nodelet
+             Threads:
+                n subscribers
+                1 spin 
+            -->
+        <!-- rosbag record /tf /kmr/amcl_pose /kmr/map /camera/color/pointcloud - -repeat-latched -->
+        
+        <node pkg="nodelet" type="nodelet" name="rosbag_nodelet" 
+              args="load nodelet_rosbag/NodeletRosbag ectane_nodelet_manager" if="$(arg logging)">
+            
+            <rosparam param="rosbag_record_topics" subst_value="True">$(arg rosbag_topics)</rosparam>
+            <param name="rosbag_path" value="$(find eddyfi_ectane)/bags/$(arg rosbag_name).bag" />
         </node>
 
     </group>
