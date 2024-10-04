@@ -5,7 +5,8 @@
 namespace reconstruction_namespace {
 
 ReconstructionNodelet::ReconstructionNodelet()
- :  ns_("/ectane"), // TODO: Figure out how to get this when using nodelets so it isn't hardcoded
+ :  publish_rate_(1),
+    ns_("/ectane"), // TODO: Figure out how to get this when using nodelets so it isn't hardcoded
     tfListener_(tfBuffer_)
 {
 }
@@ -31,6 +32,7 @@ void ReconstructionNodelet::onInit()
     transversal_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/transversal_reconstruction", 10, true);
 
     // TODO: Param for the publish rate
+    //timer_ = nh_.createTimer(ros::Duration(1 / publish_rate_), &ReconstructionNodelet::timerCb, this);
     timer_ = nh_.createTimer(ros::Duration(5), &ReconstructionNodelet::timerCb, this);
 
     recon_frame_id_ = "fixture_1";  // TODO: Use a param
@@ -103,9 +105,6 @@ void ReconstructionNodelet::axialCallback(const sensor_msgs::PointCloud2::ConstP
             output_pointcloud2.data.end(),
             axial_point_cloud_.data.begin() + prev_size);
 
-        // TODO: Don't publish the reconstructed cloud at the same rate as the inputs!!!
-        //axial_publisher_.publish(axial_point_cloud_);
-
     } catch (tf2::TransformException& ex) {
         NODELET_INFO_STREAM(node_name_ << ": Could not find transform " << recon_frame_id_ << " to " + msg->header.frame_id + ": " + ex.what());
     }
@@ -135,9 +134,6 @@ void ReconstructionNodelet::transversalCallback(const sensor_msgs::PointCloud2::
             output_pointcloud2.data.begin(),
             output_pointcloud2.data.end(),
             trans_point_cloud_.data.begin() + prev_size);
-
-        // TODO: Don't publish the reconstructed cloud at the same rate as the inputs!!!
-        //transversal_publisher_.publish(trans_point_cloud_);
 
     } catch (tf2::TransformException& ex) {
         NODELET_INFO_STREAM(node_name_ << ": Could not find transform " << recon_frame_id_ << " to " + msg->header.frame_id + ": " + ex.what());

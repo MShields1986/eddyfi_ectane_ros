@@ -1,6 +1,13 @@
 # Basic settings
 ectane_address: "192.168.2.35"
+
+# Max Acquisition Rates
+# example achieves ~1350 Hz with a goal of 5000 Hz
+# lf_probe_axial_1_channel achieves ~1600 Hz with a goal of 2000 Hz
+# lf_probe_transversal_1_channel achieves ~111 Hz with a goal of 2000 Hz
+# lf_probe_axial_and_transversal_1_channel achieves ~111 Hz with a goal of 2000 Hz
 acquisition_rate: 100
+
 gain: 23
 frequency: 5000 # Always 50kHz for lf_probe_axial_1_channel no matter what you set here...
 voltage: 7

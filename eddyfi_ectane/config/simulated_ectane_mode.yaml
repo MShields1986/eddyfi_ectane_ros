@@ -1,6 +1,6 @@
 # Basic settings
 ectane_address: "127.0.0.1"
-acquisition_rate: 10
+acquisition_rate: 200 # Not parsed by the example configuration, hardcoded to 5kHz
 gain: 23
 frequency: 50000
 voltage: 7

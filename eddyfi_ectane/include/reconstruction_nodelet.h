@@ -33,6 +33,7 @@ private:
     void                              timerCb(const ros::TimerEvent& event);
 
     ros::NodeHandle                   nh_;
+    int32_t                           publish_rate_;
     std::string                       node_name_;
     std::string                       ns_;
 

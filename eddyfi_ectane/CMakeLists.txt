@@ -219,6 +219,7 @@ include_directories(
 add_library(
   ${PROJECT_NAME}_nodelets
   src/tcp_server_boost.cpp
+  src/udp_client_boost.cpp
   src/ectane_handler.cpp
   src/ectane_nodelet.cpp
   src/ec_data_to_pointcloud_nodelet.cpp
@@ -239,6 +240,7 @@ target_link_libraries(${PROJECT_NAME}_nodelets
 set(OTHER_SRC_FILES
      src/ectane_handler.cpp
      src/tcp_server_boost.cpp
+     src/udp_client_boost.cpp
      # src/tcp_client.cpp
      # src/tcp_server.cpp
      # src/udp_connection.cpp
