@@ -6,6 +6,7 @@
 #include <thread>
 
 #include "c_sdk_data_structures.h"
+#include "udp_client_boost.h"
 #include "tcp_server_boost.h"
 
 //#include <MinimalSocket/udp/UdpSocket.h>
@@ -57,7 +58,8 @@ private:
     //MinimalSocket::Port             receive_port_;
     int                             receive_port_;
     //TcpServer                       receiver_;
-    TcpServerBoost                  receiver_;
+    //TcpServerBoost                  receiver_;
+    UdpClientBoost                  receiver_;
 
     // C SDK State Command Listener
     std::string                     recipient_address_;

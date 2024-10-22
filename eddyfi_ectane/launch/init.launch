@@ -21,7 +21,7 @@
     <arg name="rviz" default="false" unless="$(arg no_robot_mode)"/>
     <arg name="rviz" default="true" if="$(arg no_robot_mode)"/>
 
-    <arg name="logging" default="true" />
+    <arg name="logging" default="false" />
     <arg name="rosbag_name" default="ectane_recording" />
     <arg name="rosbag_topics" default="[/tf,/ectane/eddy_current_data,/ectane/axial_reconstruction,/ectane/transversal_reconstruction]" />
 
@@ -35,7 +35,10 @@
         </group>
         
         <!-- Crosstalk Rectification Configuration -->
-        <rosparam file="$(find eddyfi_ectane)/config/probes/crosstalk_$(arg configuration).yaml" command="load" unless="$(eval configuration == 'example')" />
+        <rosparam file="$(find eddyfi_ectane)/config/probes/crosstalk_$(arg configuration).yaml" command="load" />
+        
+        <!-- Example Geometry Configuration -->
+        <rosparam file="$(find eddyfi_ectane)/config/probes/example_geometry.yaml" command="load" if="$(eval configuration == 'example')" />
         
         <!-- HF Coil Geometry Configuration -->
         <rosparam file="$(find eddyfi_ectane)/config/probes/hf_axial_geometry.yaml" command="load" if="$(eval configuration == 'hf_probe_axial_1_channel')" />
