@@ -25,15 +25,15 @@ void ReconstructionNodelet::onInit()
     //ops.allow_concurrent_callbacks = true;
     //axial_subscriber_ = nh_.subscribe(ops);
 
-    axial_subscriber_ = nh_.subscribe(ns_ + "/axial_data_at_probe", 100, &ReconstructionNodelet::axialCallback, this);
-    transversal_subscriber_ = nh_.subscribe(ns_ + "/transversal_data_at_probe", 100, &ReconstructionNodelet::transversalCallback, this);
+    axial_subscriber_ = nh_.subscribe(ns_ + "/axial_data_at_probe", 6000, &ReconstructionNodelet::axialCallback, this);
+    transversal_subscriber_ = nh_.subscribe(ns_ + "/transversal_data_at_probe", 6000, &ReconstructionNodelet::transversalCallback, this);
 
-    axial_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/axial_reconstruction", 10, true);
-    transversal_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/transversal_reconstruction", 10, true);
+    axial_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/distributed_axial_reconstruction", 100, true);
+    transversal_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/distributed_transversal_reconstruction", 100, true);
 
     // TODO: Param for the publish rate
     //timer_ = nh_.createTimer(ros::Duration(1 / publish_rate_), &ReconstructionNodelet::timerCb, this);
-    timer_ = nh_.createTimer(ros::Duration(5), &ReconstructionNodelet::timerCb, this);
+    timer_ = nh_.createTimer(ros::Duration(3), &ReconstructionNodelet::timerCb, this);
 
     recon_frame_id_ = "fixture_1";  // TODO: Use a param
 
