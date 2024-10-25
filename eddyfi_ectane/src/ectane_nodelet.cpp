@@ -80,7 +80,7 @@ void EctaneNodelet::onInit()
 
     initHardware();
 
-    publisher_ = nh_.advertise<eddyfi_ectane::Observation>(ns_ + "/eddy_current_data", 100, true);
+    publisher_ = nh_.advertise<eddyfi_ectane::Observation>(ns_ + "/eddy_current_data", 10000, true);
 
     balance_service_ = nh_.advertiseService(ns_ + "/balance_device", &EctaneNodelet::balanceDevice, this);
     stream_service_ = nh_.advertiseService(ns_ + "/stream_data", &EctaneNodelet::streamData, this);

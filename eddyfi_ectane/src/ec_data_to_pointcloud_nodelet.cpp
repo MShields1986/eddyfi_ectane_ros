@@ -24,10 +24,10 @@ void EcDataToPointCloudNodelet::onInit()
     //ops.allow_concurrent_callbacks = true;
     //subscriber_ = nh_.subscribe(ops);
 
-    subscriber_ = nh_.subscribe(ns_ + "/eddy_current_data", 100, &EcDataToPointCloudNodelet::ectaneCallback, this);
+    subscriber_ = nh_.subscribe(ns_ + "/eddy_current_data", 10000, &EcDataToPointCloudNodelet::ectaneCallback, this);
 
-    axial_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/axial_data_at_probe", 10, true);
-    transversal_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/transversal_data_at_probe", 10, true);
+    axial_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/axial_data_at_probe", 10000, true);
+    transversal_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/transversal_data_at_probe", 10000, true);
     
     no_robot_ = false;
     no_robot_extrinsic_frame_id_ = "";
