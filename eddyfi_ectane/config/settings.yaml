@@ -2,13 +2,15 @@
 ectane_address: "192.168.2.35"
 
 # Max Acquisition Rates
-# example achieves ~1350 Hz with a goal of 5000 Hz
-# lf_probe_axial_1_channel achieves ~1600 Hz with a goal of 2000 Hz
+# lf_probe_axial_1_channel achieves ~111 Hz with a goal of 2000 Hz
 # lf_probe_transversal_1_channel achieves ~111 Hz with a goal of 2000 Hz
 # lf_probe_axial_and_transversal_1_channel achieves ~111 Hz with a goal of 2000 Hz
+
+# Rule of thumb: acquisition_rate = 1 / (timeslots * (2.7 / freq))
+
 acquisition_rate: 100
 
-gain: 23
+gain: 23 # 23 dB is the minimum
 frequency: 5000
 voltage: 7
 # No robot mode settings
