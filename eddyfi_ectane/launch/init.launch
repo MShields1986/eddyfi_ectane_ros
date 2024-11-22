@@ -103,9 +103,9 @@
                 1 publisher
                 1 spin 
             -->
-        <node pkg="nodelet" type="nodelet" name="reconstruction_nodelet" 
+        <!--<node pkg="nodelet" type="nodelet" name="reconstruction_nodelet" 
               args="load eddyfi_ectane/reconstruction_nodelet ectane_nodelet_manager">
-        </node>
+        </node>-->
 
 
         <!-- Recording Nodelet
