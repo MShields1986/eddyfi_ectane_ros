@@ -23,7 +23,7 @@ private:
     int                                port_;
     std::size_t                        receive_message_max_size_;
 
-    boost::asio::io_service            io_service_;
+    boost::asio::io_context            io_context_;
     //boost::asio::ip::tcp::acceptor     acceptor_;
     boost::asio::ip::udp::endpoint     remote_endpoint_;
 

@@ -17,8 +17,8 @@ UdpClientBoost::UdpClientBoost(std::string ip_address, int port)
         * 32                        // Bits per field
         / CHAR_BIT                  // Bits per byte
         ),
-       io_service_(),
-       socket_(io_service_, {boost::asio::ip::udp::v4(), (short unsigned int)port_})
+       io_context_(),
+       socket_(io_context_, {boost::asio::ip::udp::v4(), (short unsigned int)port_})
 {
 }
 

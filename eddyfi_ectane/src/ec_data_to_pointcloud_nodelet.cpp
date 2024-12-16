@@ -75,6 +75,7 @@ void EcDataToPointCloudNodelet::ectaneCallback(const eddyfi_ectane::Observation:
     }
 
     // Axial setup
+    // TODO: Move these instantiations out of here
     sensor_msgs::PointCloud2 axial_point_cloud;
     axial_point_cloud.header.stamp = msg->header.stamp;
     axial_point_cloud.header.frame_id = msg->header.frame_id;
@@ -97,6 +98,7 @@ void EcDataToPointCloudNodelet::ectaneCallback(const eddyfi_ectane::Observation:
     axial_point_cloud.data.resize(axial_point_cloud.row_step);
 
     // Transversal setup
+    // TODO: Move these instantiations out of here
     sensor_msgs::PointCloud2 trans_point_cloud;
     trans_point_cloud.header.stamp = msg->header.stamp;
     trans_point_cloud.header.frame_id = msg->header.frame_id;
@@ -122,14 +124,14 @@ void EcDataToPointCloudNodelet::ectaneCallback(const eddyfi_ectane::Observation:
     sensor_msgs::PointCloud2Iterator<float>      axialIterX(axial_point_cloud, "x");
     sensor_msgs::PointCloud2Iterator<float>      axialIterY(axial_point_cloud, "y");
     sensor_msgs::PointCloud2Iterator<float>      axialIterZ(axial_point_cloud, "z");
-    sensor_msgs::PointCloud2Iterator<float>    axialIterImaginary(axial_point_cloud, "Imaginary");
-    sensor_msgs::PointCloud2Iterator<float>    axialIterReal(axial_point_cloud, "Real");
+    sensor_msgs::PointCloud2Iterator<int>        axialIterImaginary(axial_point_cloud, "Imaginary");
+    sensor_msgs::PointCloud2Iterator<int>        axialIterReal(axial_point_cloud, "Real");
 
     sensor_msgs::PointCloud2Iterator<float>      transIterX(trans_point_cloud, "x");
     sensor_msgs::PointCloud2Iterator<float>      transIterY(trans_point_cloud, "y");
     sensor_msgs::PointCloud2Iterator<float>      transIterZ(trans_point_cloud, "z");
-    sensor_msgs::PointCloud2Iterator<float>    transIterImaginary(trans_point_cloud, "Imaginary");
-    sensor_msgs::PointCloud2Iterator<float>    transIterReal(trans_point_cloud, "Real");
+    sensor_msgs::PointCloud2Iterator<int>        transIterImaginary(trans_point_cloud, "Imaginary");
+    sensor_msgs::PointCloud2Iterator<int>        transIterReal(trans_point_cloud, "Real");
 
     //int32_t
 
