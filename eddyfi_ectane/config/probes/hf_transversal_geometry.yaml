@@ -1,5 +1,9 @@
 # Taken from...
 # https://github.com/UoS-EEE-Automation/EctaneLabviewIntegration/blob/main/Documentation/Additional%20Configurations/highFreqProbeTDS.pdf
+
+# !!! WARNING !!!
+# Whilst these values are accurate against the datasheet for the probe I don't think that they are corect given the geometry of the coil
+
 geometry:
   T02:
     x:  0.000
