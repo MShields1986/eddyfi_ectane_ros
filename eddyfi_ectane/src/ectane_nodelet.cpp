@@ -294,6 +294,9 @@ bool EctaneNodelet::streamData(eddyfi_ectane::StreamData::Request& request,
 
 void EctaneNodelet::populateEcData() {
     int i = 0;
+
+    // TODO: Don't think I really need to be looping entry here as I am just looping indexing i
+    //       This would make more sense maybe if it was in the ectane_handler
     for (auto& entry : channel_configs_and_readings_) {
         entry = std::tuple(
             std::get<0>(entry),                                               // Channel name
