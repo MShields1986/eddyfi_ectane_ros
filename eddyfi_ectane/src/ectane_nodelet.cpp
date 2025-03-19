@@ -348,7 +348,6 @@ void EctaneNodelet::timerCb(const ros::TimerEvent& event){
 }
 
 
-
 } // namespace ectane_namespace
 
 PLUGINLIB_EXPORT_CLASS(ectane_namespace::EctaneNodelet, nodelet::Nodelet);
