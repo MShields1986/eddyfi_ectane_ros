@@ -18,24 +18,16 @@ void ReconstructionNodelet::onInit()
     node_name_ = getName();
     //ns_ = ros::this_node::getNamespace();
 
-    // Work around to allow concurrent callbacks on the same topic
-    // By default you there is no concurrency on callbacks for each topic!
-    //ros::SubscribeOptions ops;
-    //ops.template init<std_msgs::String>(ns_ + "/axial_data_at_probe", 100, &ReconstructionNodelet::axialCallback, this);
-    //ops.allow_concurrent_callbacks = true;
-    //axial_subscriber_ = nh_.subscribe(ops);
-
     axial_subscriber_ = nh_.subscribe(ns_ + "/axial_data_at_probe", 6000, &ReconstructionNodelet::axialCallback, this);
     transversal_subscriber_ = nh_.subscribe(ns_ + "/transversal_data_at_probe", 6000, &ReconstructionNodelet::transversalCallback, this);
 
     axial_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/distributed_axial_reconstruction", 100, true);
     transversal_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/distributed_transversal_reconstruction", 100, true);
 
-    // TODO: Param for the publish rate
-    //timer_ = nh_.createTimer(ros::Duration(1 / publish_rate_), &ReconstructionNodelet::timerCb, this);
-    timer_ = nh_.createTimer(ros::Duration(3), &ReconstructionNodelet::timerCb, this);
+    ReconstructionNodelet::paramHandler(ns_ + "/reconstruction/rate", publish_rate_);
+    timer_ = nh_.createTimer(ros::Duration(1 / publish_rate_), &ReconstructionNodelet::timerCb, this);
 
-    recon_frame_id_ = "fixture_1";  // TODO: Use a param
+    ReconstructionNodelet::paramHandler(ns_ + "/reconstruction/recon_frame_id", recon_frame_id_);
 
     axial_point_cloud_.header.stamp = ros::Time::now();
     axial_point_cloud_.header.frame_id = recon_frame_id_;
@@ -81,62 +73,64 @@ void ReconstructionNodelet::onInit()
 }
 
 
-void ReconstructionNodelet::axialCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
-    axial_point_cloud_.header.stamp = msg->header.stamp;
-
-    sensor_msgs::PointCloud2 output_pointcloud2;
-
-    try {
-        trans_ = tfBuffer_.lookupTransform(
-          recon_frame_id_,
-          msg->header.frame_id,
-          msg->header.stamp,
-          ros::Duration(1.0)
-          );
-
-        tf2::doTransform<sensor_msgs::PointCloud2>(*msg, output_pointcloud2, trans_);
-
-        axial_point_cloud_.width += output_pointcloud2.width;
-        uint64_t prev_size = axial_point_cloud_.data.size();
-        axial_point_cloud_.data.resize(axial_point_cloud_.data.size() + output_pointcloud2.data.size());
-
-        std::copy(
-            output_pointcloud2.data.begin(),
-            output_pointcloud2.data.end(),
-            axial_point_cloud_.data.begin() + prev_size);
-
-    } catch (tf2::TransformException& ex) {
-        NODELET_INFO_STREAM(node_name_ << ": Could not find transform " << recon_frame_id_ << " to " + msg->header.frame_id + ": " + ex.what());
+template <typename ParamType>
+ParamType ReconstructionNodelet::paramHandler(std::string param_name, ParamType& param_value) {
+    while (!nh_.hasParam(param_name)) {
+        NODELET_INFO_STREAM_THROTTLE(10, node_name_ << ": Waiting for parameter " << param_name);
     }
+    nh_.getParam(param_name, param_value);
+    NODELET_DEBUG_STREAM(node_name_ << 
+        ": Read in parameter " << param_name << " = " << param_value);
+    return param_value;
+}
+
+
+void ReconstructionNodelet::axialCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
+    axial_buffer_.push_back(*msg);
 }
 
 
 void ReconstructionNodelet::transversalCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
-    trans_point_cloud_.header.stamp = msg->header.stamp;
+    trans_buffer_.push_back(*msg);
+}
 
-    sensor_msgs::PointCloud2 output_pointcloud2;
 
-    try {
-        trans_ = tfBuffer_.lookupTransform(
-          recon_frame_id_,
-          msg->header.frame_id,
-          msg->header.stamp,
-          ros::Duration(1.0)
-          );
+void ReconstructionNodelet::updateReconCloud(std::deque<sensor_msgs::PointCloud2>& buffer, sensor_msgs::PointCloud2& recon_cloud) {
+    if (!buffer.empty()) {
+        sensor_msgs::PointCloud2* msg = &buffer.front();
+        sensor_msgs::PointCloud2 output_pointcloud2;
 
-        tf2::doTransform<sensor_msgs::PointCloud2>(*msg, output_pointcloud2, trans_);
+        try {
+            trans_ = tfBuffer_.lookupTransform(recon_frame_id_,      // target frame
+                                               msg->header.stamp,    // target time
+                                               msg->header.frame_id, // source frame
+                                               msg->header.stamp,    // source time
+                                               // "map",                // fixed frame
+                                               recon_frame_id_,      // fixed frame
+                                               ros::Duration(3.0)    // time out
+                                               );
 
-        trans_point_cloud_.width += output_pointcloud2.width;
-        uint64_t prev_size = trans_point_cloud_.data.size();
-        trans_point_cloud_.data.resize(trans_point_cloud_.data.size() + output_pointcloud2.data.size());
+            tf2::doTransform<sensor_msgs::PointCloud2>(*msg, output_pointcloud2, trans_);
 
-        std::copy(
-            output_pointcloud2.data.begin(),
-            output_pointcloud2.data.end(),
-            trans_point_cloud_.data.begin() + prev_size);
+            recon_cloud.width += output_pointcloud2.width;
+            uint64_t prev_size = recon_cloud.data.size();
+            recon_cloud.data.resize(recon_cloud.data.size() + output_pointcloud2.data.size());
 
-    } catch (tf2::TransformException& ex) {
-        NODELET_INFO_STREAM(node_name_ << ": Could not find transform " << recon_frame_id_ << " to " + msg->header.frame_id + ": " + ex.what());
+            std::copy(
+                output_pointcloud2.data.begin(),
+                output_pointcloud2.data.end(),
+                recon_cloud.data.begin() + prev_size);
+
+            recon_cloud.header.stamp = msg->header.stamp;
+
+            buffer.pop_front();
+
+        } catch (tf2::TransformException& ex) {
+            NODELET_WARN_STREAM(node_name_ << 
+                ": Could not find transform " << recon_frame_id_ << 
+                " to " << msg->header.frame_id << 
+                ": " << ex.what());
+        }
     }
 }
 
@@ -144,7 +138,10 @@ void ReconstructionNodelet::transversalCallback(const sensor_msgs::PointCloud2::
 void ReconstructionNodelet::timerCb(const ros::TimerEvent& event){
     NODELET_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
 
+    // TODO: This might be better as two separate timers
+    updateReconCloud(axial_buffer_, axial_point_cloud_);
     axial_publisher_.publish(axial_point_cloud_);
+    updateReconCloud(trans_buffer_, trans_point_cloud_);
     transversal_publisher_.publish(trans_point_cloud_);
 }
 

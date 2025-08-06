@@ -16,3 +16,7 @@ voltage: 7
 # No robot mode settings
 no_robot_extrinsic_frame_id: "fixture_1"
 no_robot_x_pos_incrememnt: 0.001
+
+reconstruction:
+  recon_frame_id: "fixture_1"
+  rate: 20

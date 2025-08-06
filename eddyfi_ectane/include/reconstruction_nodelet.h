@@ -2,6 +2,7 @@
 
 #include <signal.h>
 #include <algorithm>
+#include <deque>
 
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
@@ -25,30 +26,34 @@ public:
     explicit ReconstructionNodelet();
 
 private:
-    virtual void                      onInit();
+    virtual void                            onInit();
+    template <typename ParamType>
+    ParamType                               paramHandler(std::string param_name, ParamType& param_value);
+    void                                    axialCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
+    void                                    transversalCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
+    void                                    timerCb(const ros::TimerEvent& event);
+    void                                    updateReconCloud(std::deque<sensor_msgs::PointCloud2>& buffer,
+                                                             sensor_msgs::PointCloud2& recon_cloud);
 
-    void                              axialCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
-    void                              transversalCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
+    ros::NodeHandle                         nh_;
+    int32_t                                 publish_rate_;
+    std::string                             node_name_;
+    std::string                             ns_;
 
-    void                              timerCb(const ros::TimerEvent& event);
+    ros::Subscriber                         axial_subscriber_;
+    ros::Subscriber                         transversal_subscriber_;
 
-    ros::NodeHandle                   nh_;
-    int32_t                           publish_rate_;
-    std::string                       node_name_;
-    std::string                       ns_;
+    ros::Publisher                          axial_publisher_;
+    ros::Publisher                          transversal_publisher_;
 
-    ros::Subscriber                   axial_subscriber_;
-    ros::Subscriber                   transversal_subscriber_;
+    ros::Timer                              timer_;
 
-    ros::Publisher                    axial_publisher_;
-    ros::Publisher                    transversal_publisher_;
+    sensor_msgs::PointCloud2                axial_point_cloud_;
+    sensor_msgs::PointCloud2                trans_point_cloud_;
+    std::deque<sensor_msgs::PointCloud2>    axial_buffer_;
+    std::deque<sensor_msgs::PointCloud2>    trans_buffer_;
 
-    ros::Timer                        timer_;
-
-    sensor_msgs::PointCloud2          axial_point_cloud_; // TODO: Consider heap allocation
-    sensor_msgs::PointCloud2          trans_point_cloud_; // TODO: Consider heap allocation
-
-    std::string                       recon_frame_id_;
+    std::string                             recon_frame_id_;
 
     // TF
     tf2_ros::Buffer                         tfBuffer_;
