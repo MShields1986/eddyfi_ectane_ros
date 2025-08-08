@@ -1,3 +1,3 @@
 int32 frequency
-int32 imaginary_reading
-int32 real_reading
+float32 imaginary_reading
+float32 real_reading

@@ -124,14 +124,14 @@ void EcDataToPointCloudNodelet::ectaneCallback(const eddyfi_ectane::Observation:
     sensor_msgs::PointCloud2Iterator<float>      axialIterX(axial_point_cloud, "x");
     sensor_msgs::PointCloud2Iterator<float>      axialIterY(axial_point_cloud, "y");
     sensor_msgs::PointCloud2Iterator<float>      axialIterZ(axial_point_cloud, "z");
-    sensor_msgs::PointCloud2Iterator<int>        axialIterImaginary(axial_point_cloud, "Imaginary");
-    sensor_msgs::PointCloud2Iterator<int>        axialIterReal(axial_point_cloud, "Real");
+    sensor_msgs::PointCloud2Iterator<float>      axialIterImaginary(axial_point_cloud, "Imaginary");
+    sensor_msgs::PointCloud2Iterator<float>      axialIterReal(axial_point_cloud, "Real");
 
     sensor_msgs::PointCloud2Iterator<float>      transIterX(trans_point_cloud, "x");
     sensor_msgs::PointCloud2Iterator<float>      transIterY(trans_point_cloud, "y");
     sensor_msgs::PointCloud2Iterator<float>      transIterZ(trans_point_cloud, "z");
-    sensor_msgs::PointCloud2Iterator<int>        transIterImaginary(trans_point_cloud, "Imaginary");
-    sensor_msgs::PointCloud2Iterator<int>        transIterReal(trans_point_cloud, "Real");
+    sensor_msgs::PointCloud2Iterator<float>      transIterImaginary(trans_point_cloud, "Imaginary");
+    sensor_msgs::PointCloud2Iterator<float>      transIterReal(trans_point_cloud, "Real");
 
     //int32_t
 

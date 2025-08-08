@@ -107,9 +107,8 @@ void ReconstructionNodelet::updateReconCloud(std::deque<sensor_msgs::PointCloud2
                                                msg->header.stamp,    // target time
                                                msg->header.frame_id, // source frame
                                                msg->header.stamp,    // source time
-                                               // "map",                // fixed frame
                                                recon_frame_id_,      // fixed frame
-                                               ros::Duration(3.0)    // time out
+                                               ros::Duration(1.0)    // time out
                                                );
 
             tf2::doTransform<sensor_msgs::PointCloud2>(*msg, output_pointcloud2, trans_);
