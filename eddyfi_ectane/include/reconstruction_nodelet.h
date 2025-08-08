@@ -31,12 +31,14 @@ private:
     ParamType                               paramHandler(std::string param_name, ParamType& param_value);
     void                                    axialCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
     void                                    transversalCallback(const sensor_msgs::PointCloud2::ConstPtr& msg);
-    void                                    timerCb(const ros::TimerEvent& event);
+    void                                    timerProcCb(const ros::TimerEvent& event);
+    void                                    timerPubCb(const ros::TimerEvent& event);
     void                                    updateReconCloud(std::deque<sensor_msgs::PointCloud2>& buffer,
                                                              sensor_msgs::PointCloud2& recon_cloud);
 
     ros::NodeHandle                         nh_;
-    int32_t                                 publish_rate_;
+    float                                   process_rate_;
+    float                                   publish_rate_;
     std::string                             node_name_;
     std::string                             ns_;
 
@@ -46,7 +48,8 @@ private:
     ros::Publisher                          axial_publisher_;
     ros::Publisher                          transversal_publisher_;
 
-    ros::Timer                              timer_;
+    ros::Timer                              proc_timer_;
+    ros::Timer                              pub_timer_;
 
     sensor_msgs::PointCloud2                axial_point_cloud_;
     sensor_msgs::PointCloud2                trans_point_cloud_;

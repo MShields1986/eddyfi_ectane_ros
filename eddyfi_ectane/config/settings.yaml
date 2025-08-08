@@ -19,4 +19,5 @@ no_robot_x_pos_incrememnt: 0.001
 
 reconstruction:
   recon_frame_id: "fixture_1"
-  rate: 20
+  process_rate: 100
+  publish_rate: 5

@@ -24,10 +24,12 @@ void ReconstructionNodelet::onInit()
     axial_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/distributed_axial_reconstruction", 100, true);
     transversal_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/distributed_transversal_reconstruction", 100, true);
 
-    ReconstructionNodelet::paramHandler(ns_ + "/reconstruction/rate", publish_rate_);
-    timer_ = nh_.createTimer(ros::Duration(1 / publish_rate_), &ReconstructionNodelet::timerCb, this);
+    ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/process_rate", process_rate_);
+    ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/publish_rate", publish_rate_);
+    proc_timer_ = nh_.createTimer(ros::Duration(1.0f / process_rate_), &ReconstructionNodelet::timerProcCb, this);
+    pub_timer_ = nh_.createTimer(ros::Duration(1.0f / publish_rate_), &ReconstructionNodelet::timerPubCb, this);
 
-    ReconstructionNodelet::paramHandler(ns_ + "/reconstruction/recon_frame_id", recon_frame_id_);
+    ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/recon_frame_id", recon_frame_id_);
 
     axial_point_cloud_.header.stamp = ros::Time::now();
     axial_point_cloud_.header.frame_id = recon_frame_id_;
@@ -135,13 +137,16 @@ void ReconstructionNodelet::updateReconCloud(std::deque<sensor_msgs::PointCloud2
 }
 
 
-void ReconstructionNodelet::timerCb(const ros::TimerEvent& event){
-    NODELET_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
-
+void ReconstructionNodelet::timerProcCb(const ros::TimerEvent& event){
     // TODO: This might be better as two separate timers
     updateReconCloud(axial_buffer_, axial_point_cloud_);
-    axial_publisher_.publish(axial_point_cloud_);
     updateReconCloud(trans_buffer_, trans_point_cloud_);
+}
+
+
+void ReconstructionNodelet::timerPubCb(const ros::TimerEvent& event){
+    NODELET_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
+    axial_publisher_.publish(axial_point_cloud_);
     transversal_publisher_.publish(trans_point_cloud_);
 }
 
