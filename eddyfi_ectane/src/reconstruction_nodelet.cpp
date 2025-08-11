@@ -138,15 +138,29 @@ void ReconstructionNodelet::updateReconCloud(std::deque<sensor_msgs::PointCloud2
 
 void ReconstructionNodelet::timerProcCb(const ros::TimerEvent& event){
     // TODO: This might be better as two separate timers
-    updateReconCloud(axial_buffer_, axial_point_cloud_);
-    updateReconCloud(trans_buffer_, trans_point_cloud_);
+    {
+        std::lock_guard<std::mutex> lk(axial_mutex_);
+        updateReconCloud(axial_buffer_, axial_point_cloud_);
+    }
+
+    {
+        std::lock_guard<std::mutex> lk(trans_mutex_);
+        updateReconCloud(trans_buffer_, trans_point_cloud_);
+    }
 }
 
 
 void ReconstructionNodelet::timerPubCb(const ros::TimerEvent& event){
     NODELET_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
-    axial_publisher_.publish(axial_point_cloud_);
-    transversal_publisher_.publish(trans_point_cloud_);
+    {
+        std::lock_guard<std::mutex> lk(axial_mutex_);
+        axial_publisher_.publish(axial_point_cloud_);
+    }
+
+    {
+        std::lock_guard<std::mutex> lk(trans_mutex_);
+        transversal_publisher_.publish(trans_point_cloud_);
+    }
 }
 
 

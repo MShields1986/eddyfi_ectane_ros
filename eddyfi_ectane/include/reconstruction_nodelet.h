@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <algorithm>
 #include <deque>
+#include <mutex>
 
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
@@ -55,6 +56,8 @@ private:
     sensor_msgs::PointCloud2                trans_point_cloud_;
     std::deque<sensor_msgs::PointCloud2>    axial_buffer_;
     std::deque<sensor_msgs::PointCloud2>    trans_buffer_;
+    std::mutex                              axial_mutex_;
+    std::mutex                              trans_mutex_;
 
     std::string                             recon_frame_id_;
 
