@@ -29,7 +29,13 @@ ReconstructionNode::ReconstructionNode(const rclcpp::NodeOptions& options)
     recon_frame_id_ = node_utils::requiredParam(*this, "reconstruction.recon_frame_id").as_string();
 
     tfBuffer_ = std::make_unique<tf2_ros::Buffer>(get_clock());
-    tfListener_ = std::make_unique<tf2_ros::TransformListener>(*tfBuffer_, this);
+    // Humble's intra-process communication supports only volatile durability, so the listener's transient local
+    // /tf_static subscription goes through the middleware
+    auto tf_static_options = tf2_ros::detail::get_default_transform_listener_static_sub_options();
+    tf_static_options.use_intra_process_comm = rclcpp::IntraProcessSetting::Disable;
+    tfListener_ = std::make_unique<tf2_ros::TransformListener>(
+        *tfBuffer_, this, true, tf2_ros::DynamicListenerQoS(), tf2_ros::StaticListenerQoS(),
+        tf2_ros::detail::get_default_transform_listener_sub_options(), tf_static_options);
 
     subscriber_group_ = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     proc_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -43,10 +49,11 @@ ReconstructionNode::ReconstructionNode(const rclcpp::NodeOptions& options)
         addStream(topic_prefix, "transversal");
     }
 
-    proc_timer_ = create_timer(std::chrono::duration<double>(1.0 / process_rate_),
-                               [this]() { timerProcCb(); }, proc_group_);
-    pub_timer_ = create_timer(std::chrono::duration<double>(1.0 / publish_rate_),
-                              [this]() { timerPubCb(); }, pub_group_);
+    // Humble's Node has no create_timer, so the timers are created on the node's clock with rclcpp::create_timer
+    proc_timer_ = rclcpp::create_timer(this, get_clock(), rclcpp::Duration::from_seconds(1.0 / process_rate_),
+                                       [this]() { timerProcCb(); }, proc_group_);
+    pub_timer_ = rclcpp::create_timer(this, get_clock(), rclcpp::Duration::from_seconds(1.0 / publish_rate_),
+                                      [this]() { timerPubCb(); }, pub_group_);
 }
 
 
@@ -74,8 +81,13 @@ void ReconstructionNode::addStream(const std::string& topic_prefix, const std::s
     stream->recon_cloud.row_step = stream->recon_cloud.point_step * stream->recon_cloud.width;
     stream->recon_cloud.data.resize(stream->recon_cloud.row_step);
 
+    // Humble's intra-process communication supports only volatile durability, so the transient local
+    // reconstructions go through the middleware, which their subscribers in other processes use anyway
+    rclcpp::PublisherOptions publisher_options;
+    publisher_options.use_intra_process_comm = rclcpp::IntraProcessSetting::Disable;
     stream->publisher = create_publisher<sensor_msgs::msg::PointCloud2>(
-        topic_prefix + "distributed_" + orientation + "_reconstruction", node_utils::reconstructionQoS());
+        topic_prefix + "distributed_" + orientation + "_reconstruction", node_utils::reconstructionQoS(),
+        publisher_options);
 
     // Taking ownership lets a publisher composed into the same container move its clouds here, and the cloud's
     // data is then moved into the buffer, so neither is copied

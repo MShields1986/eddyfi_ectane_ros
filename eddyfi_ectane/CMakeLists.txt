@@ -101,10 +101,12 @@ target_link_libraries(${PROJECT_NAME}_components
   ${geometry_msgs_TARGETS}
   tf2::tf2
   tf2_ros::tf2_ros
-  tf2_sensor_msgs::tf2_sensor_msgs
   Boost::headers
   Threads::Threads
 )
+
+# Humble's tf2_sensor_msgs exports its include directories but no target
+ament_target_dependencies(${PROJECT_NAME}_components tf2_sensor_msgs)
 
 if(ENABLE_CLANGTIDY)
   set_target_properties(${PROJECT_NAME}_components PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
