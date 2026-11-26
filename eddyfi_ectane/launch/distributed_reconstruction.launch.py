@@ -36,6 +36,7 @@ def launch_setup(context):
                 name='distributed_reconstruction',
                 namespace='ectane',
                 parameters=[settings, crosstalk],
+                extra_arguments=[{'use_intra_process_comms': True}],
             ),
         ],
         output='screen',

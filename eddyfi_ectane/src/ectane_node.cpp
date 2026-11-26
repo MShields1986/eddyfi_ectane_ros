@@ -7,6 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <tuple>
+#include <utility>
 
 #include <rclcpp_components/register_node_macro.hpp>
 
@@ -75,7 +76,7 @@ EctaneNode::EctaneNode(const rclcpp::NodeOptions& options)
        );
 
     // Populate ROS message
-    ec_data_.header.frame_id = "ectane";
+    observation_template_.header.frame_id = "ectane";
 
     for (const auto& config : channel_configs_) {
         RCLCPP_DEBUG_STREAM(get_logger(),
@@ -96,10 +97,10 @@ EctaneNode::EctaneNode(const rclcpp::NodeOptions& options)
         channel.frequency = frequencies_[config.frequency_index - 1];
         channel.dc_voltage = voltages_[config.frequency_index - 1];
 
-        ec_data_.channels.push_back(channel);
+        observation_template_.channels.push_back(channel);
     }
 
-    RCLCPP_DEBUG_STREAM(get_logger(), eddyfi_ectane::msg::to_yaml(ec_data_));
+    RCLCPP_DEBUG_STREAM(get_logger(), eddyfi_ectane::msg::to_yaml(observation_template_));
 
     initHardware();
 
@@ -351,31 +352,33 @@ void EctaneNode::acquisitionLoop() {
             break;
         }
 
-        ec_data_.header.stamp = now();
+        // Published by moving, so composed subscribers in the same container receive it without a copy
+        auto observation = std::make_unique<eddyfi_ectane::msg::Observation>(observation_template_);
+        observation->header.stamp = now();
 
-        if (populateEcData()) {
-            publisher_->publish(ec_data_);
+        if (populateEcData(*observation)) {
+            publisher_->publish(std::move(observation));
         }
     }
 }
 
 
-bool EctaneNode::populateEcData() {
-    if (ec_data_raw_.size() < ec_data_.channels.size()) {
+bool EctaneNode::populateEcData(eddyfi_ectane::msg::Observation& observation) {
+    if (ec_data_raw_.size() < observation.channels.size()) {
         RCLCPP_WARN_STREAM_THROTTLE(get_logger(), *get_clock(), 10000, "Received " << ec_data_raw_.size() <<
-            " samples for " << ec_data_.channels.size() << " channels, skipping");
+            " samples for " << observation.channels.size() << " channels, skipping");
         return false;
     }
 
     // Channels are in the same order as the C SDK data stream
     // TODO: This would make more sense maybe if it was in the ectane_handler
-    for (std::size_t i = 0; i < ec_data_.channels.size(); ++i) {
+    for (std::size_t i = 0; i < observation.channels.size(); ++i) {
         const int32_t imaginary = (int32_t)(int16_t)(((ec_data_raw_[i]) >> 16) & 0x0000FFFF);
         const int32_t real = (int32_t)(int16_t)(((ec_data_raw_[i]) >> 0) & 0x0000FFFF);
 
         RCLCPP_DEBUG_STREAM(get_logger(), "Buffer: " << ec_data_raw_[i]);
         RCLCPP_DEBUG_STREAM(get_logger(),
-            "Name: " << ec_data_.channels[i].name << " (r=" << real << ",i=" << imaginary << ")"
+            "Name: " << observation.channels[i].name << " (r=" << real << ",i=" << imaginary << ")"
             );
 
         std::complex<double> reading((double)real, (double)imaginary);
@@ -386,8 +389,8 @@ bool EctaneNode::populateEcData() {
         double theta = std::arg(reading) + shift;
         reading = std::complex(mag * cos(theta), mag * sin(theta));
 
-        ec_data_.channels[i].imaginary_reading = (float)std::imag(reading);
-        ec_data_.channels[i].real_reading = (float)std::real(reading);
+        observation.channels[i].imaginary_reading = (float)std::imag(reading);
+        observation.channels[i].real_reading = (float)std::real(reading);
     }
     return true;
 }

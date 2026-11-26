@@ -50,7 +50,7 @@ private:
                                                     eddyfi_ectane::srv::StreamData::Response& response);
     void                                 updateStreaming();
     void                                 acquisitionLoop();
-    bool                                 populateEcData();
+    bool                                 populateEcData(eddyfi_ectane::msg::Observation& observation);
     void                                 shutdown();
 
     std::vector<std::string>                                 channel_names_;
@@ -70,7 +70,7 @@ private:
 
     std::unique_ptr<EctaneHandler>                           ectane_handler_;
     std::vector<int>                                         ec_data_raw_;
-    eddyfi_ectane::msg::Observation                          ec_data_;
+    eddyfi_ectane::msg::Observation                          observation_template_;   // Channels, copied into each observation
 
     // Reading the C SDK data stream blocks, so it runs on its own thread rather than holding up an executor
     std::atomic<bool>                                        streaming_;

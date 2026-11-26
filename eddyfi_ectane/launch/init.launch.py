@@ -26,6 +26,9 @@ from launch_ros.actions import ComposableNodeContainer, Node
 from launch_ros.descriptions import ComposableNode
 
 
+# Composed nodes in the same container pass messages without copying them
+INTRA_PROCESS = [{'use_intra_process_comms': True}]
+
 # Coil geometry configurations for each configuration
 GEOMETRY = {
     'example': ['example_geometry.yaml'],
@@ -66,30 +69,47 @@ def launch_setup(context):
     crosstalk = crosstalk_file(share, configuration)
     geometry = [os.path.join(share, 'config', 'probes', name) for name in GEOMETRY[configuration]]
     launch_settings = {'configuration': configuration, 'no_robot': no_robot_mode}
+    reconstruction = LaunchConfiguration('reconstruction').perform(context).lower() in ('true', '1')
+
+    composable_nodes = [
+        # EC Data to Pointcloud at Array Head, loaded first so it is subscribed before data streams
+        ComposableNode(
+            package='eddyfi_ectane',
+            plugin='ec_data_to_pointcloud_namespace::EcDataToPointCloudNode',
+            name='ec_data_to_pointcloud',
+            namespace='ectane',
+            parameters=[settings, crosstalk, launch_settings],
+            extra_arguments=INTRA_PROCESS,
+        ),
+    ]
+
+    # Reconstruction, which otherwise runs separately with distributed_reconstruction.launch.py
+    if reconstruction:
+        composable_nodes.append(ComposableNode(
+            package='eddyfi_ectane',
+            plugin='reconstruction_namespace::ReconstructionNode',
+            name='reconstruction',
+            namespace='ectane',
+            parameters=[settings, crosstalk],
+            extra_arguments=INTRA_PROCESS,
+        ))
+
+    # Eddyfi Ectane, which waits for the C SDK to connect while loading
+    composable_nodes.append(ComposableNode(
+        package='eddyfi_ectane',
+        plugin='ectane_namespace::EctaneNode',
+        name='ectane_handler',
+        namespace='ectane',
+        parameters=[settings, crosstalk, *geometry, launch_settings],
+        extra_arguments=INTRA_PROCESS,
+    ))
 
     container = ComposableNodeContainer(
         name='ectane_container',
         namespace='ectane',
         package='rclcpp_components',
         executable='component_container_mt',
-        composable_node_descriptions=[
-            # EC Data to Pointcloud at Array Head, loaded first so it is subscribed before data streams
-            ComposableNode(
-                package='eddyfi_ectane',
-                plugin='ec_data_to_pointcloud_namespace::EcDataToPointCloudNode',
-                name='ec_data_to_pointcloud',
-                namespace='ectane',
-                parameters=[settings, crosstalk, launch_settings],
-            ),
-            # Eddyfi Ectane, which waits for the C SDK to connect while loading
-            ComposableNode(
-                package='eddyfi_ectane',
-                plugin='ectane_namespace::EctaneNode',
-                name='ectane_handler',
-                namespace='ectane',
-                parameters=[settings, crosstalk, *geometry, launch_settings],
-            ),
-        ],
+        composable_node_descriptions=composable_nodes,
         output='screen',
     )
 
@@ -120,6 +140,9 @@ def generate_launch_description():
                               description='Probe configuration, see the options at the top of this file'),
         DeclareLaunchArgument('no_robot_mode', default_value='false',
                               description='Broadcast a dummy transform for the probe rather than use a robot'),
+        DeclareLaunchArgument('reconstruction', default_value='false',
+                              description='Run the reconstruction in the same container, rather than with '
+                                          'distributed_reconstruction.launch.py'),
         DeclareLaunchArgument('rviz', default_value=LaunchConfiguration('no_robot_mode'),
                               description='Open RViz, by default only in no robot mode'),
         DeclareLaunchArgument('logging', default_value='false', description='Record a bag'),

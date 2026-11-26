@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
@@ -29,10 +30,10 @@ public:
     explicit EcDataToPointCloudNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
 private:
-    void                              ectaneCallback(const eddyfi_ectane::msg::Observation::ConstSharedPtr msg);
+    void                              ectaneCallback(std::unique_ptr<eddyfi_ectane::msg::Observation> msg);
     void                              updateNoRobotTf(const eddyfi_ectane::msg::Observation& msg);
-    sensor_msgs::msg::PointCloud2     toPointCloud(const std_msgs::msg::Header& header,
-                                                   const std::vector<const eddyfi_ectane::msg::Channel*>& channels) const;
+    std::unique_ptr<sensor_msgs::msg::PointCloud2> toPointCloud(const std_msgs::msg::Header& header,
+                                                                const std::vector<const eddyfi_ectane::msg::Channel*>& channels) const;
 
     rclcpp::Subscription<eddyfi_ectane::msg::Observation>::SharedPtr       subscriber_;
     int                                                                     num_frequencies_;

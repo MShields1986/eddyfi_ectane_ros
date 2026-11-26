@@ -25,6 +25,7 @@ The reconstruction can run on another machine, with the same configuration as th
 ```bash
 ros2 launch eddyfi_ectane distributed_reconstruction.launch.py configuration:=lf_probe_axial_and_transversal_1_channel
 ```
+or in the driver's container with `reconstruction:=true`, so the whole pipeline passes messages within one process.
 
 Start and stop streaming, and balance, with the services:
 ```bash
@@ -37,6 +38,7 @@ Replay a recording in RViz with `ros2 launch eddyfi_ectane replay.launch.py bag:
 
 ## Changes from ROS 1
 - The nodelets are components, which `init.launch.py` loads into one multi-threaded container. Each can also run on its own, e.g. `ros2 run eddyfi_ectane ectane_node`.
+- The components use intra-process communication, publishing messages by moving them and taking ownership of the messages they subscribe to, so components in the same container pass messages without copying them. A subscriber in another process, such as RViz or a bag recording, gets its own copy as usual.
 - There is no parameter server, so each node loads the YAML files it needs. The configuration files are in the ROS 2 format, under `/**: ros__parameters:`. A missing or invalid setting stops the node loading with an error, rather than it waiting for the parameter.
 - The reconstruction launch takes the configuration, as the reconstruction reads its crosstalk configuration to find how many frequencies to reconstruct.
 - The Ectane node reads the C SDK's data stream on its own thread, and validates its settings before waiting for the C SDK to connect.

@@ -31,14 +31,15 @@ EcDataToPointCloudNode::EcDataToPointCloudNode(const rclcpp::NodeOptions& option
             topic_prefix + "transversal_data_at_probe", node_utils::dataQoS()));
     }
 
-    // Subscribe last so callbacks only run once everything above is set up
+    // Subscribe last so callbacks only run once everything above is set up. Taking ownership lets a publisher
+    // composed into the same container move its observations here without a copy.
     subscriber_ = create_subscription<eddyfi_ectane::msg::Observation>(
         "eddy_current_data", node_utils::dataQoS(),
-        [this](const eddyfi_ectane::msg::Observation::ConstSharedPtr msg) { ectaneCallback(msg); });
+        [this](std::unique_ptr<eddyfi_ectane::msg::Observation> msg) { ectaneCallback(std::move(msg)); });
 }
 
 
-void EcDataToPointCloudNode::ectaneCallback(const eddyfi_ectane::msg::Observation::ConstSharedPtr msg) {
+void EcDataToPointCloudNode::ectaneCallback(std::unique_ptr<eddyfi_ectane::msg::Observation> msg) {
     // Update dummy TF broadcaster
     if (no_robot_) {
         updateNoRobotTf(*msg);
@@ -71,10 +72,11 @@ void EcDataToPointCloudNode::ectaneCallback(const eddyfi_ectane::msg::Observatio
 }
 
 
-sensor_msgs::msg::PointCloud2 EcDataToPointCloudNode::toPointCloud(
+std::unique_ptr<sensor_msgs::msg::PointCloud2> EcDataToPointCloudNode::toPointCloud(
     const std_msgs::msg::Header& header,
     const std::vector<const eddyfi_ectane::msg::Channel*>& channels) const {
-    sensor_msgs::msg::PointCloud2 point_cloud;
+    auto cloud = std::make_unique<sensor_msgs::msg::PointCloud2>();
+    sensor_msgs::msg::PointCloud2& point_cloud = *cloud;
     point_cloud.header.stamp = header.stamp;
     point_cloud.header.frame_id = header.frame_id;
 
@@ -97,7 +99,7 @@ sensor_msgs::msg::PointCloud2 EcDataToPointCloudNode::toPointCloud(
 
     // Iterators need data, e.g. there is none in the transversal cloud of an axial only configuration
     if (channels.empty()) {
-        return point_cloud;
+        return cloud;
     }
 
     sensor_msgs::PointCloud2Iterator<float>      iterX(point_cloud, "x");
@@ -120,7 +122,7 @@ sensor_msgs::msg::PointCloud2 EcDataToPointCloudNode::toPointCloud(
         ++iterReal;
     }
 
-    return point_cloud;
+    return cloud;
 }
 
 

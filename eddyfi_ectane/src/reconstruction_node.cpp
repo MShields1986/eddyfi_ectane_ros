@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <utility>
 
 #include <rclcpp_components/register_node_macro.hpp>
 
@@ -76,13 +77,15 @@ void ReconstructionNode::addStream(const std::string& topic_prefix, const std::s
     stream->publisher = create_publisher<sensor_msgs::msg::PointCloud2>(
         topic_prefix + "distributed_" + orientation + "_reconstruction", node_utils::reconstructionQoS());
 
+    // Taking ownership lets a publisher composed into the same container move its clouds here, and the cloud's
+    // data is then moved into the buffer, so neither is copied
     rclcpp::SubscriptionOptions subscription_options;
     subscription_options.callback_group = subscriber_group_;
     stream->subscriber = create_subscription<sensor_msgs::msg::PointCloud2>(
         topic_prefix + orientation + "_data_at_probe",
         node_utils::dataQoS(),
-        [this, stream](const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
-            BufferedCloud observation{now(), *msg};
+        [this, stream](std::unique_ptr<sensor_msgs::msg::PointCloud2> msg) {
+            BufferedCloud observation{now(), std::move(*msg)};
             std::lock_guard<std::mutex> lk(stream->buffer_mutex);
             stream->buffer.push_back(std::move(observation));
         },
@@ -91,22 +94,22 @@ void ReconstructionNode::addStream(const std::string& topic_prefix, const std::s
 
 
 void ReconstructionNode::updateReconCloud(ReconstructionStream& stream) {
-    // Copy the oldest observation so the buffer is not locked while waiting on TF
+    // Take the oldest observation, so the buffer is not locked while waiting on TF. It is done with either way,
+    // as retrying one without a transform would stall the stream.
     BufferedCloud observation;
     {
         std::lock_guard<std::mutex> lk(stream.buffer_mutex);
         if (stream.buffer.empty()) {
             return;
         }
-        observation = stream.buffer.front();
+        observation = std::move(stream.buffer.front());
+        stream.buffer.pop_front();
     }
     const sensor_msgs::msg::PointCloud2& msg = observation.cloud;
 
     // Nothing to add, e.g. the transversal clouds of an axial only configuration, and transforming
     // a cloud without data fails
     if (msg.width == 0 || msg.data.empty()) {
-        std::lock_guard<std::mutex> lk(stream.buffer_mutex);
-        stream.buffer.pop_front();
         return;
     }
 
@@ -148,10 +151,6 @@ void ReconstructionNode::updateReconCloud(ReconstructionStream& stream) {
             " to " << msg.header.frame_id <<
             ": " << ex.what());
     }
-
-    // Done with the observation either way, retrying one without a transform would stall the stream
-    std::lock_guard<std::mutex> lk(stream.buffer_mutex);
-    stream.buffer.pop_front();
 }
 
 
@@ -165,8 +164,14 @@ void ReconstructionNode::timerProcCb() {
 void ReconstructionNode::timerPubCb() {
     RCLCPP_INFO_STREAM_THROTTLE(get_logger(), *get_clock(), 600000, "Node running");
     for (auto& stream : streams_) {
-        std::lock_guard<std::mutex> lk(stream->recon_mutex);
-        stream->publisher->publish(stream->recon_cloud);
+        // Copied as the reconstruction keeps growing, then published by moving with the lock released, so
+        // processing carries on while it is sent
+        std::unique_ptr<sensor_msgs::msg::PointCloud2> recon_cloud;
+        {
+            std::lock_guard<std::mutex> lk(stream->recon_mutex);
+            recon_cloud = std::make_unique<sensor_msgs::msg::PointCloud2>(stream->recon_cloud);
+        }
+        stream->publisher->publish(std::move(recon_cloud));
     }
 }
 
