@@ -1,5 +1,9 @@
 # Taken from...
 # https://github.com/UoS-EEE-Automation/EctaneLabviewIntegration/blob/main/Documentation/Additional%20Configurations/ChannelMapping/HF-4Channels-Axial%26Transversal-MixedChannels.xls
+#
+# Channel names are F<n><coil>: F<n> is the frequency channel (frequency n of the "frequencies" setting)
+# and <coil> is the key of the coil in the geometry configuration, e.g. F2A05 is coil A05 at the second
+# frequency.
 crosstalk:
   # Frequency 1
   ## Axial Channels

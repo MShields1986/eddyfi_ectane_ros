@@ -3,9 +3,7 @@
 
 
 EctaneHandler::EctaneHandler()
-    :  ec_data_(), ec_data_ptr_(&ec_data_),
-
-       // C SDK Data Sender
+    :  // C SDK Data Sender
        sender_address_("127.0.0.1"),
        receive_port_(24011),
        receiver_(sender_address_, receive_port_),
@@ -23,8 +21,8 @@ void EctaneHandler::setup(
     Configurations configuration,
     int32_t acquisition_rate,
     int32_t gain,
-    int32_t frequency,
-    float voltage
+    const std::vector<int32_t>& frequencies,
+    const std::vector<float>& voltages
     )
 
 {
@@ -36,40 +34,31 @@ void EctaneHandler::setup(
     configuration_ = configuration;
     acquisition_rate_ = acquisition_rate;
     gain_ = gain;
-    frequency_ = frequency;
-    voltage_ = voltage;
+    frequencies_ = frequencies;
+    voltages_ = voltages;
 
     updateCommandPacket();
 }
 
 
-void EctaneHandler::readData() {
-    ec_data_ = receiver_.receive();
+std::vector<int> EctaneHandler::readData() {
+    return receiver_.receive();
 }
 
 
 void EctaneHandler::updateCommandPacket() {
     command_packet_.state = state_;
-    strcpy(command_packet_.ip_address, ectane_address_.c_str());
+    strncpy(command_packet_.ip_address, ectane_address_.c_str(), sizeof(command_packet_.ip_address) - 1);
+    command_packet_.ip_address[sizeof(command_packet_.ip_address) - 1] = '\0';
     command_packet_.configuration = configuration_;
     command_packet_.acquisition_rate = acquisition_rate_;
     command_packet_.gain = gain_;
-    command_packet_.frequency_1 = frequency_;
-    command_packet_.voltage_1 = voltage_;
-    command_packet_.frequency_2 = frequency_;
-    command_packet_.voltage_2 = voltage_;
-    command_packet_.frequency_3 = frequency_;
-    command_packet_.voltage_3 = voltage_;
-    command_packet_.frequency_4 = frequency_;
-    command_packet_.voltage_4 = voltage_;
-    command_packet_.frequency_5 = frequency_;
-    command_packet_.voltage_5 = voltage_;
-    command_packet_.frequency_6 = frequency_;
-    command_packet_.voltage_6 = voltage_;
-    command_packet_.frequency_7 = frequency_;
-    command_packet_.voltage_7 = voltage_;
-    command_packet_.frequency_8 = frequency_;
-    command_packet_.voltage_8 = voltage_;
+
+    // Slots beyond the configuration's frequencies are not read by the C SDK
+    for (std::size_t i = 0; i < kCommandPacketFrequencies; ++i) {
+        command_packet_.frequencies[i] = i < frequencies_.size() ? frequencies_[i] : 0;
+        command_packet_.voltages[i] = i < voltages_.size() ? voltages_[i] : 0.0f;
+    }
 
     updateCommandString();
 }
@@ -81,25 +70,12 @@ void EctaneHandler::updateCommandString() {
                         command_packet_.ip_address + "," +
                         std::to_string(command_packet_.configuration) + "," +
                         std::to_string(command_packet_.acquisition_rate) + "," +
-                        std::to_string(command_packet_.gain) + "," +
-                        std::to_string(command_packet_.frequency_1) + "," +
-                        std::to_string((int32_t)command_packet_.voltage_1) + "," +
-                        std::to_string(command_packet_.frequency_2) + "," +
-                        std::to_string((int32_t)command_packet_.voltage_2) + "," +
-                        std::to_string(command_packet_.frequency_3) + "," +
-                        std::to_string((int32_t)command_packet_.voltage_3) + "," +
-                        std::to_string(command_packet_.frequency_4) + "," +
-                        std::to_string((int32_t)command_packet_.voltage_4) + "," +
-                        std::to_string(command_packet_.frequency_5) + "," +
-                        std::to_string((int32_t)command_packet_.voltage_5) + "," +
-                        std::to_string(command_packet_.frequency_6) + "," +
-                        std::to_string((int32_t)command_packet_.voltage_6) + "," +
-                        std::to_string(command_packet_.frequency_7) + "," +
-                        std::to_string((int32_t)command_packet_.voltage_7) + "," +
-                        std::to_string(command_packet_.frequency_8) + "," +
-                        std::to_string((int32_t)command_packet_.voltage_8);
+                        std::to_string(command_packet_.gain);
 
-    command_string_ += "\0";
+    for (int i = 0; i < kCommandPacketFrequencies; ++i) {
+        command_string_ += "," + std::to_string(command_packet_.frequencies[i]) +
+                           "," + std::to_string(command_packet_.voltages[i]);
+    }
 }
 
 

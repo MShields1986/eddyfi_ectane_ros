@@ -7,15 +7,19 @@ ectane_address: "192.168.2.35"
 # lf_probe_axial_and_transversal_1_channel achieves ~111 Hz with a goal of 2000 Hz
 
 # Rule of thumb: acquisition_rate = 1 / (timeslots * (2.7 / freq))
+# For multi-frequency configurations use the lowest frequency
 
 acquisition_rate: 100
 
 gain: 23 # 23 dB is the minimum
-frequency: 5000
-voltage: 7
+
+# Excitation per frequency channel: *_1_channel configurations use the first entry, *_4_channels configurations
+# use the first four (crosstalk channels F1... to F4...). The C SDK truncates voltages to whole volts.
+frequencies: [5000, 10000, 20000, 50000]
+voltages: [7, 7, 7, 7]
 # No robot mode settings
 no_robot_extrinsic_frame_id: "fixture_1"
-no_robot_x_pos_incrememnt: 0.001
+no_robot_x_pos_increment: 0.001
 
 reconstruction:
   recon_frame_id: "fixture_1"

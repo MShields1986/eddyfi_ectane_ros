@@ -1,5 +1,9 @@
 # Taken from...
 # https://github.com/UoS-EEE-Automation/EctaneLabviewIntegration/blob/main/Documentation/Additional%20Configurations/ChannelMapping/LF-4Channel-Axial%26Transversal-MixedChannels.xls
+#
+# Channel names are F<n><coil>: F<n> is the frequency channel (frequency n of the "frequencies" setting)
+# and <coil> is the key of the coil in the geometry configuration, e.g. F2A05 is coil A05 at the second
+# frequency.
 crosstalk:
   # Frequency 1
   ## Axial Channels
@@ -198,7 +202,7 @@ crosstalk:
   F2A04:
     time_slot:  2
     input:  1
-  F1A05:
+  F2A05:
     time_slot:  7
     input:  1
   F2A06:
@@ -216,7 +220,7 @@ crosstalk:
   F2A10:
     time_slot:  3
     input:  1
-  F1A11:
+  F2A11:
     time_slot:  4
     input:  1
   F2A12:
@@ -234,7 +238,7 @@ crosstalk:
   F2A16:
     time_slot: 10 
     input:  2
-  F1A17:
+  F2A17:
     time_slot:  5
     input:  2
   F2A18:
@@ -252,7 +256,7 @@ crosstalk:
   F2A22:
     time_slot:  1
     input:  3
-  F1A23:
+  F2A23:
     time_slot:  2
     input:  3
   F2A24:
@@ -270,7 +274,7 @@ crosstalk:
   F2A28:
     time_slot:  8
     input:  4
-  F1A29:
+  F2A29:
     time_slot:  3
     input:  4
   F2A30:

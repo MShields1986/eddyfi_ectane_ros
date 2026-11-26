@@ -3,6 +3,8 @@
 #include <signal.h>
 #include <algorithm>
 #include <complex>
+#include <string>
+#include <vector>
 
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
@@ -16,12 +18,22 @@
 #include "eddyfi_ectane/Frequency.h"
 
 #include "c_sdk_data_structures.h"
+#include "channel_naming.h"
 #include "ectane_handler.h"
 #include "eddyfi_ectane/BalanceDevice.h"
 #include "eddyfi_ectane/StreamData.h"
 
 
 namespace ectane_namespace {
+
+struct ChannelConfig {
+    std::string name;
+    int time_slot;
+    int input;
+    int frequency_index;     // 1-based
+    float x_position;
+    float y_position;
+};
 
 class EctaneNodelet : public nodelet::Nodelet
 {
@@ -42,10 +54,11 @@ private:
                                                        eddyfi_ectane::BalanceDevice::Response& response);
     bool                                 streamData(eddyfi_ectane::StreamData::Request& request,
                                                     eddyfi_ectane::StreamData::Response& response);
-    void                                 populateEcData();
+    bool                                 populateEcData();
 
     void                                 getChannelNamespaces();
     void                                 getChannelConfigurations();
+    bool                                 validateFrequencies();
     void                                 uniqueElements(std::vector<std::string>& vec);
 
     void                                 timerCb(const ros::TimerEvent& event);
@@ -56,22 +69,15 @@ private:
     std::string                                              ns_;
     std::string                                              geom_param_prefix_;
     std::string                                              crosstalk_param_prefix_;
-    std::vector
-        <std::tuple
-            <
-            std::string,     // Channel Name
-            int, int,        // time_slot, input
-            float, float,    // x_pos, y_pos
-            int, int         // imaginary, real EC readings
-            >
-        >                                                    channel_configs_and_readings_;
+    std::vector<ChannelConfig>                               channel_configs_;     // In C SDK data stream order
+    int                                                      num_frequencies_;
 
     std::string                                              ectane_address_;
     std::string                                              configuration_str_;
     int32_t                                                  acquisition_rate_;
     int32_t                                                  gain_;
-    int32_t                                                  frequency_;
-    float                                                    voltage_;
+    std::vector<int32_t>                                     frequencies_;
+    std::vector<float>                                       voltages_;
     std::vector<std::string>                                 channel_namespaces_;
 
     ros::Publisher                                           publisher_;
@@ -82,7 +88,7 @@ private:
     ros::Timer                                               timer_;
 
     EctaneHandler                                            ectane_handler_;
-    const std::vector<int>*                                  ec_data_ptr_;
+    std::vector<int>                                         ec_data_raw_;
     eddyfi_ectane::Observation                               ec_data_;
 };
 

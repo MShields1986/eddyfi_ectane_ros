@@ -43,17 +43,12 @@ std::vector<int> TcpServerBoost::receive() {
     size_t n = boost::asio::read(this->socket_, bufs, error);
 
     if(error) {
-        std::cout << "read error: " << error << std::endl;
+        throw boost::system::system_error(error, "TCP receive failed");
     }
 
     buf.commit(n);
-    //std::cout << "#################################" << std::endl;
-    //std::cout << "            Start Read" << std::endl;
-    //std::cout << "#################################" << std::endl;
-    //std::cout << "TCP Server read " << n << " bytes" << std::endl;
-    //std::cout << "Buffer size " << buf.size() << " bytes" << std::endl;
 
-    std::vector<int> data(32 * 8 * 5);
+    std::vector<int> data(receive_message_max_size_ / sizeof(int));
     boost::asio::buffer_copy(boost::asio::buffer(data), buf.data());
     //std::cout << "TCP Server yielded a vector<int> of " << data.size() * 32 / 8 << " bytes" << std::endl;
 

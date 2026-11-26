@@ -4,6 +4,7 @@
 #include <string>
 #include <cstring>
 #include <thread>
+#include <vector>
 
 #include "c_sdk_data_structures.h"
 #include "udp_client_boost.h"
@@ -22,12 +23,13 @@ public:
                                           Configurations configuration,
                                           int32_t acquisition_rate,
                                           int32_t gain,
-                                          int32_t frequency,
-                                          float voltage
+                                          const std::vector<int32_t>& frequencies,
+                                          const std::vector<float>& voltages
                                           );
 
 
-    void                            readData();
+    // Blocks until the C SDK sends a data cycle, throws on a socket error
+    std::vector<int>                readData();
 
     void                            doNothing();
     void                            commandSocketInitialise();
@@ -43,16 +45,9 @@ private:
     void                            updateCommandString();
     void                            changeState(State state);
 
-    bool*                           kill_now_;
-
     // Ectane
     std::string                     ectane_address_;
-    std::vector<int>                ec_data_;
-    std::vector<int>*               ec_data_ptr_;
-public:
-    const std::vector<int>*         ec_data_ptr() const { return ec_data_ptr_; };
 
-private:
     // C SDK Data Sender
     std::string                     sender_address_;
     //MinimalSocket::Port             receive_port_;
@@ -77,8 +72,8 @@ private:
     Configurations                  configuration_;
     int32_t                         acquisition_rate_;
     int32_t                         gain_;
-    int32_t                         frequency_;
-    float                           voltage_;
+    std::vector<int32_t>            frequencies_;
+    std::vector<float>              voltages_;
 
     CommandPacket                   command_packet_;
     std::string                     command_string_;

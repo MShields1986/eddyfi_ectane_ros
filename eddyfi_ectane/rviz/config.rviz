@@ -168,7 +168,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.0010000000474974513
       Style: Flat Squares
-      Topic: /ectane/axial_reconstruction
+      Topic: /ectane/distributed_axial_reconstruction
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -198,7 +198,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.0010000000474974513
       Style: Flat Squares
-      Topic: /ectane/transversal_reconstruction
+      Topic: /ectane/distributed_transversal_reconstruction
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true

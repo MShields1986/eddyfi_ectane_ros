@@ -15,28 +15,21 @@ enum State {
 };
 
 
+// Frequency and voltage pairs carried by the command packet
+constexpr int kCommandPacketFrequencies = 8;
+
+// The Ectane supports up to 5 frequencies per time slot (inst_MAX_NUM_OF_FREQUENCY_PER_TS in InstDefsEctIris.h)
+constexpr int kMaxFrequencies = 5;
+
 struct CommandPacket {
     enum State state;
     char ip_address[22];
     int configuration;
     int32_t acquisition_rate;
     int32_t gain;
-    int32_t frequency_1;
-    float voltage_1;
-    int32_t frequency_2;
-    float voltage_2;
-    int32_t frequency_3;
-    float voltage_3;
-    int32_t frequency_4;
-    float voltage_4;
-    int32_t frequency_5;
-    float voltage_5;
-    int32_t frequency_6;
-    float voltage_6;
-    int32_t frequency_7;
-    float voltage_7;
-    int32_t frequency_8;
-    float voltage_8;
+    // Sent as frequency_1,voltage_1,frequency_2,voltage_2,...
+    int32_t frequencies[kCommandPacketFrequencies];
+    float voltages[kCommandPacketFrequencies];
 };
 
 

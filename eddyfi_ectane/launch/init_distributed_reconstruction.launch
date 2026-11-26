@@ -8,11 +8,11 @@
     hf_probe_axial_1_channel
     hf_probe_transversal_1_channel
     hf_probe_axial_and_transversal_1_channel
-    hf_probe_axial_and_transversal_4_channels - NOT YET IMPLEMENTED IN ectane_nodelet.cpp
+    hf_probe_axial_and_transversal_4_channels - Multi-frequency, publishes per frequency topics under /ectane/frequency_<n>/
     lf_probe_axial_1_channel
     lf_probe_transversal_1_channel
     lf_probe_axial_and_transversal_1_channel
-    lf_probe_axial_and_transversal_4_channels - NOT YET IMPLEMENTED IN ectane_nodelet.cpp
+    lf_probe_axial_and_transversal_4_channels - Multi-frequency, publishes per frequency topics under /ectane/frequency_<n>/
     ##########################################
     -->
     <arg name="configuration" default="lf_probe_axial_and_transversal_1_channel" />
@@ -20,6 +20,8 @@
 
     <arg name="rviz" default="false" unless="$(arg no_robot_mode)"/>
     <arg name="rviz" default="true" if="$(arg no_robot_mode)"/>
+    <arg name="rviz_config" default="config_multi_frequency.rviz" if="$(eval configuration.endswith('_4_channels'))"/>
+    <arg name="rviz_config" default="config.rviz" unless="$(eval configuration.endswith('_4_channels'))"/>
 
     <arg name="logging" default="false" />
     <arg name="rosbag_name" default="ectane_recording" />
@@ -125,6 +127,6 @@
     </group>
 
     <!-- Rviz -->
-    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find eddyfi_ectane)/rviz/config.rviz" if="$(arg rviz)" />
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find eddyfi_ectane)/rviz/$(arg rviz_config)" if="$(arg rviz)" />
 
 </launch>

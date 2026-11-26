@@ -2,6 +2,7 @@
 
 #include <signal.h>
 #include <algorithm>
+#include <vector>
 
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
@@ -17,6 +18,9 @@
 #include <geometry_msgs/TransformStamped.h>
 
 #include "eddyfi_ectane/Observation.h"
+#include "eddyfi_ectane/Channel.h"
+
+#include "channel_naming.h"
 
 
 namespace ec_data_to_pointcloud_namespace {
@@ -34,18 +38,21 @@ private:
 
     void                              ectaneCallback(const eddyfi_ectane::Observation::ConstPtr& msg);
     void                              updateNoRobotTf(const eddyfi_ectane::Observation::ConstPtr& msg);
+    sensor_msgs::PointCloud2          toPointCloud(const std_msgs::Header& header,
+                                                   const std::vector<const eddyfi_ectane::Channel*>& channels) const;
 
     ros::NodeHandle                   nh_;
     std::string                       node_name_;
     std::string                       ns_;
 
     ros::Subscriber                   subscriber_;
-    ros::Publisher                    axial_publisher_;
-    ros::Publisher                    transversal_publisher_;
+    int                               num_frequencies_;
+    std::vector<ros::Publisher>       axial_publishers_;          // Indexed by frequency index - 1
+    std::vector<ros::Publisher>       transversal_publishers_;    // Indexed by frequency index - 1
 
     bool                              no_robot_;
     std::string                       no_robot_extrinsic_frame_id_;
-    float                             no_robot_x_pos_incrememnt_;
+    float                             no_robot_x_pos_increment_;
     float                             no_robot_x_pos_;
     tf2_ros::TransformBroadcaster     br_;
 

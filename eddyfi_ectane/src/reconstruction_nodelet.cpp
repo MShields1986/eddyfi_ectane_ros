@@ -4,9 +4,16 @@
 
 namespace reconstruction_namespace {
 
+namespace {
+
+// How long after an observation arrives to wait for its transform before dropping it
+const ros::Duration kTfTimeout(1.0);
+
+} // namespace
+
 ReconstructionNodelet::ReconstructionNodelet()
  :  publish_rate_(1),
-    ns_("/ectane"), // TODO: Figure out how to get this when using nodelets so it isn't hardcoded
+    ns_("/ectane"),
     tfListener_(tfBuffer_)
 {
 }
@@ -16,62 +23,23 @@ void ReconstructionNodelet::onInit()
 {
     ros::NodeHandle &nh_ = getMTNodeHandle(); //getNodeHandle();
     node_name_ = getName();
-    //ns_ = ros::this_node::getNamespace();
-
-    axial_subscriber_ = nh_.subscribe(ns_ + "/axial_data_at_probe", 6000, &ReconstructionNodelet::axialCallback, this);
-    transversal_subscriber_ = nh_.subscribe(ns_ + "/transversal_data_at_probe", 6000, &ReconstructionNodelet::transversalCallback, this);
-
-    axial_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/distributed_axial_reconstruction", 100, true);
-    transversal_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/distributed_transversal_reconstruction", 100, true);
+    ns_ = getMTNodeHandle().getNamespace();
 
     ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/process_rate", process_rate_);
     ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/publish_rate", publish_rate_);
-    proc_timer_ = nh_.createTimer(ros::Duration(1.0f / process_rate_), &ReconstructionNodelet::timerProcCb, this);
-    pub_timer_ = nh_.createTimer(ros::Duration(1.0f / publish_rate_), &ReconstructionNodelet::timerPubCb, this);
-
     ReconstructionNodelet::paramHandler(ns_ + "/settings/reconstruction/recon_frame_id", recon_frame_id_);
 
-    axial_point_cloud_.header.stamp = ros::Time::now();
-    axial_point_cloud_.header.frame_id = recon_frame_id_;
+    // One axial and one transversal reconstruction per frequency
+    const int num_frequencies = channel_naming::waitForNumFrequencies(ns_ + "/crosstalk/");
+    for (int frequency_index = 1; frequency_index <= num_frequencies; ++frequency_index) {
+        const std::string topic_prefix =
+            ns_ + "/" + channel_naming::frequencyNamespace(frequency_index, num_frequencies);
+        addStream(nh_, topic_prefix, "axial");
+        addStream(nh_, topic_prefix, "transversal");
+    }
 
-    sensor_msgs::PointCloud2Modifier axial_modifier(axial_point_cloud_);
-    axial_modifier.setPointCloud2Fields(
-        5,
-        "x", 1, sensor_msgs::PointField::FLOAT32,               // 32 bits = 4 bytes
-        "y", 1, sensor_msgs::PointField::FLOAT32,
-        "z", 1, sensor_msgs::PointField::FLOAT32,
-        "Imaginary", 1, sensor_msgs::PointField::FLOAT32,
-        "Real", 1, sensor_msgs::PointField::FLOAT32
-        );
-
-    axial_point_cloud_.height = 1;
-    axial_point_cloud_.width = 0;
-    axial_point_cloud_.is_dense = true;
-    axial_point_cloud_.point_step = 20;                           // 5 fields * 4 bytes per field
-    axial_point_cloud_.row_step = axial_point_cloud_.point_step * axial_point_cloud_.width;
-    axial_point_cloud_.data.resize(axial_point_cloud_.row_step);
-
-    trans_point_cloud_.header.stamp = ros::Time::now();
-    trans_point_cloud_.header.frame_id = recon_frame_id_;
-
-    sensor_msgs::PointCloud2Modifier trans_modifier(trans_point_cloud_);
-    trans_modifier.setPointCloud2Fields(
-        5,
-        "x", 1, sensor_msgs::PointField::FLOAT32,               // 32 bits = 4 bytes
-        "y", 1, sensor_msgs::PointField::FLOAT32,
-        "z", 1, sensor_msgs::PointField::FLOAT32,
-        "Imaginary", 1, sensor_msgs::PointField::FLOAT32,
-        "Real", 1, sensor_msgs::PointField::FLOAT32
-        );
-
-    trans_point_cloud_.height = 1;
-    trans_point_cloud_.width = 0;
-    trans_point_cloud_.is_dense = true;
-    trans_point_cloud_.point_step = 20;                           // 5 fields * 4 bytes per field
-    trans_point_cloud_.row_step = trans_point_cloud_.point_step * trans_point_cloud_.width;
-    trans_point_cloud_.data.resize(trans_point_cloud_.row_step);
-
-    trans_point_cloud_.header.frame_id = recon_frame_id_;
+    proc_timer_ = nh_.createTimer(ros::Duration(1.0f / process_rate_), &ReconstructionNodelet::timerProcCb, this);
+    pub_timer_ = nh_.createTimer(ros::Duration(1.0f / publish_rate_), &ReconstructionNodelet::timerPubCb, this);
 }
 
 
@@ -79,39 +47,85 @@ template <typename ParamType>
 ParamType ReconstructionNodelet::paramHandler(std::string param_name, ParamType& param_value) {
     while (!nh_.hasParam(param_name)) {
         NODELET_INFO_STREAM_THROTTLE(10, node_name_ << ": Waiting for parameter " << param_name);
+        ros::Duration(0.1).sleep();
     }
     nh_.getParam(param_name, param_value);
-    NODELET_DEBUG_STREAM(node_name_ << 
+    NODELET_DEBUG_STREAM(node_name_ <<
         ": Read in parameter " << param_name << " = " << param_value);
     return param_value;
 }
 
 
-void ReconstructionNodelet::axialCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
-    axial_buffer_.push_back(*msg);
+void ReconstructionNodelet::addStream(ros::NodeHandle& nh,
+                                      const std::string& topic_prefix,
+                                      const std::string& orientation) {
+    streams_.push_back(std::make_unique<ReconstructionStream>());
+    ReconstructionStream* stream = streams_.back().get();
+
+    stream->recon_cloud.header.stamp = ros::Time::now();
+    stream->recon_cloud.header.frame_id = recon_frame_id_;
+
+    sensor_msgs::PointCloud2Modifier modifier(stream->recon_cloud);
+    modifier.setPointCloud2Fields(
+        5,
+        "x", 1, sensor_msgs::PointField::FLOAT32,               // 32 bits = 4 bytes
+        "y", 1, sensor_msgs::PointField::FLOAT32,
+        "z", 1, sensor_msgs::PointField::FLOAT32,
+        "Imaginary", 1, sensor_msgs::PointField::FLOAT32,
+        "Real", 1, sensor_msgs::PointField::FLOAT32
+        );
+
+    stream->recon_cloud.height = 1;
+    stream->recon_cloud.width = 0;
+    stream->recon_cloud.is_dense = true;
+    stream->recon_cloud.point_step = 20;                         // 5 fields * 4 bytes per field
+    stream->recon_cloud.row_step = stream->recon_cloud.point_step * stream->recon_cloud.width;
+    stream->recon_cloud.data.resize(stream->recon_cloud.row_step);
+
+    stream->publisher = nh.advertise<sensor_msgs::PointCloud2>(
+        topic_prefix + "distributed_" + orientation + "_reconstruction", 100, true);
+
+    stream->subscriber = nh.subscribe<sensor_msgs::PointCloud2>(
+        topic_prefix + orientation + "_data_at_probe",
+        6000,
+        [stream](const sensor_msgs::PointCloud2::ConstPtr& msg) {
+            std::lock_guard<std::mutex> lk(stream->buffer_mutex);
+            stream->buffer.push_back({ros::Time::now(), *msg});
+        });
 }
 
 
-void ReconstructionNodelet::transversalCallback(const sensor_msgs::PointCloud2::ConstPtr& msg) {
-    trans_buffer_.push_back(*msg);
-}
+void ReconstructionNodelet::updateReconCloud(ReconstructionStream& stream) {
+    // Copy the oldest observation so the buffer is not locked while waiting on TF
+    BufferedCloud observation;
+    {
+        std::lock_guard<std::mutex> lk(stream.buffer_mutex);
+        if (stream.buffer.empty()) {
+            return;
+        }
+        observation = stream.buffer.front();
+    }
+    const sensor_msgs::PointCloud2& msg = observation.cloud;
 
+    const ros::Duration waited = ros::Time::now() - observation.received;
+    const ros::Duration timeout = waited < kTfTimeout ? kTfTimeout - waited : ros::Duration(0);
 
-void ReconstructionNodelet::updateReconCloud(std::deque<sensor_msgs::PointCloud2>& buffer, sensor_msgs::PointCloud2& recon_cloud) {
-    if (!buffer.empty()) {
-        sensor_msgs::PointCloud2* msg = &buffer.front();
-        sensor_msgs::PointCloud2 output_pointcloud2;
+    sensor_msgs::PointCloud2 output_pointcloud2;
 
-        try {
-            trans_ = tfBuffer_.lookupTransform(recon_frame_id_,      // target frame
-                                               msg->header.stamp,    // target time
-                                               msg->header.frame_id, // source frame
-                                               msg->header.stamp,    // source time
-                                               recon_frame_id_,      // fixed frame
-                                               ros::Duration(1.0)    // time out
-                                               );
+    try {
+        trans_ = tfBuffer_.lookupTransform(recon_frame_id_,      // target frame
+                                           msg.header.stamp,     // target time
+                                           msg.header.frame_id,  // source frame
+                                           msg.header.stamp,     // source time
+                                           recon_frame_id_,      // fixed frame
+                                           timeout               // time out
+                                           );
 
-            tf2::doTransform<sensor_msgs::PointCloud2>(*msg, output_pointcloud2, trans_);
+        tf2::doTransform<sensor_msgs::PointCloud2>(msg, output_pointcloud2, trans_);
+
+        {
+            std::lock_guard<std::mutex> lk(stream.recon_mutex);
+            sensor_msgs::PointCloud2& recon_cloud = stream.recon_cloud;
 
             recon_cloud.width += output_pointcloud2.width;
             uint64_t prev_size = recon_cloud.data.size();
@@ -122,44 +136,34 @@ void ReconstructionNodelet::updateReconCloud(std::deque<sensor_msgs::PointCloud2
                 output_pointcloud2.data.end(),
                 recon_cloud.data.begin() + prev_size);
 
-            recon_cloud.header.stamp = msg->header.stamp;
-
-            buffer.pop_front();
-
-        } catch (tf2::TransformException& ex) {
-            NODELET_WARN_STREAM(node_name_ << 
-                ": Could not find transform " << recon_frame_id_ << 
-                " to " << msg->header.frame_id << 
-                ": " << ex.what());
+            recon_cloud.header.stamp = msg.header.stamp;
         }
+
+    } catch (tf2::TransformException& ex) {
+        NODELET_WARN_STREAM_THROTTLE(1, node_name_ <<
+            ": Dropping observation, could not find transform " << recon_frame_id_ <<
+            " to " << msg.header.frame_id <<
+            ": " << ex.what());
     }
+
+    // Done with the observation either way, retrying one without a transform would stall the stream
+    std::lock_guard<std::mutex> lk(stream.buffer_mutex);
+    stream.buffer.pop_front();
 }
 
 
 void ReconstructionNodelet::timerProcCb(const ros::TimerEvent& event){
-    // TODO: This might be better as two separate timers
-    {
-        std::lock_guard<std::mutex> lk(axial_mutex_);
-        updateReconCloud(axial_buffer_, axial_point_cloud_);
-    }
-
-    {
-        std::lock_guard<std::mutex> lk(trans_mutex_);
-        updateReconCloud(trans_buffer_, trans_point_cloud_);
+    for (auto& stream : streams_) {
+        updateReconCloud(*stream);
     }
 }
 
 
 void ReconstructionNodelet::timerPubCb(const ros::TimerEvent& event){
     NODELET_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
-    {
-        std::lock_guard<std::mutex> lk(axial_mutex_);
-        axial_publisher_.publish(axial_point_cloud_);
-    }
-
-    {
-        std::lock_guard<std::mutex> lk(trans_mutex_);
-        transversal_publisher_.publish(trans_point_cloud_);
+    for (auto& stream : streams_) {
+        std::lock_guard<std::mutex> lk(stream->recon_mutex);
+        stream->publisher.publish(stream->recon_cloud);
     }
 }
 

@@ -5,7 +5,7 @@
 namespace ec_data_to_pointcloud_namespace {
 
 EcDataToPointCloudNodelet::EcDataToPointCloudNodelet()
-   : ns_("/ectane") // TODO: Figure out how to get this when using nodelets so it isn't hardcoded
+   : ns_("/ectane")
 {
 }
 
@@ -15,7 +15,16 @@ void EcDataToPointCloudNodelet::onInit()
     ros::NodeHandle &nh_ = getMTNodeHandle(); //getNodeHandle();
 
     node_name_ = getName();
-    //ns_ = ros::this_node::getNamespace();
+    ns_ = getMTNodeHandle().getNamespace();
+
+    no_robot_ = false;
+    no_robot_extrinsic_frame_id_ = "";
+    no_robot_x_pos_increment_ = 0.0;
+    no_robot_x_pos_ = 0.0;
+
+    EcDataToPointCloudNodelet::paramHandler(ns_ + "/settings/no_robot", no_robot_);
+    EcDataToPointCloudNodelet::paramHandler(ns_ + "/settings/no_robot_extrinsic_frame_id", no_robot_extrinsic_frame_id_);
+    EcDataToPointCloudNodelet::paramHandler(ns_ + "/settings/no_robot_x_pos_increment", no_robot_x_pos_increment_);
 
     // Work around to allow concurrent callbacks on the same topic
     // By default you there is no concurrency on callbacks for each topic!
@@ -24,19 +33,19 @@ void EcDataToPointCloudNodelet::onInit()
     //ops.allow_concurrent_callbacks = true;
     //subscriber_ = nh_.subscribe(ops);
 
+    // One axial and one transversal cloud per frequency
+    num_frequencies_ = channel_naming::waitForNumFrequencies(ns_ + "/crosstalk/");
+    for (int frequency_index = 1; frequency_index <= num_frequencies_; ++frequency_index) {
+        const std::string topic_prefix =
+            ns_ + "/" + channel_naming::frequencyNamespace(frequency_index, num_frequencies_);
+        axial_publishers_.push_back(
+            nh_.advertise<sensor_msgs::PointCloud2>(topic_prefix + "axial_data_at_probe", 10000, true));
+        transversal_publishers_.push_back(
+            nh_.advertise<sensor_msgs::PointCloud2>(topic_prefix + "transversal_data_at_probe", 10000, true));
+    }
+
+    // Subscribe last so callbacks only run once everything above is set up
     subscriber_ = nh_.subscribe(ns_ + "/eddy_current_data", 10000, &EcDataToPointCloudNodelet::ectaneCallback, this);
-
-    axial_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/axial_data_at_probe", 10000, true);
-    transversal_publisher_ = nh_.advertise<sensor_msgs::PointCloud2>(ns_ + "/transversal_data_at_probe", 10000, true);
-    
-    no_robot_ = false;
-    no_robot_extrinsic_frame_id_ = "";
-    no_robot_x_pos_incrememnt_ = 0.0;
-    no_robot_x_pos_ = 0.0;
-
-    EcDataToPointCloudNodelet::paramHandler(ns_ + "/settings/no_robot", no_robot_);
-    EcDataToPointCloudNodelet::paramHandler(ns_ + "/settings/no_robot_extrinsic_frame_id", no_robot_extrinsic_frame_id_);
-    EcDataToPointCloudNodelet::paramHandler(ns_ + "/settings/no_robot_x_pos_incrememnt", no_robot_x_pos_incrememnt_);
 }
 
 
@@ -44,8 +53,7 @@ template <typename ParamType>
 void EcDataToPointCloudNodelet::paramHandler(std::string param_name, ParamType& param_value) {
     while (!nh_.hasParam(param_name)) {
         NODELET_INFO_STREAM_THROTTLE(10, node_name_ << ": Waiting for parameter " << param_name);
-        ros::spinOnce();
-        //rate_.sleep();
+        ros::Duration(0.1).sleep();
     }
     nh_.getParam(param_name, param_value);
     NODELET_DEBUG_STREAM(node_name_ << ": Read in parameter " << param_name << " = " << param_value);
@@ -54,118 +62,83 @@ void EcDataToPointCloudNodelet::paramHandler(std::string param_name, ParamType& 
 
 
 void EcDataToPointCloudNodelet::ectaneCallback(const eddyfi_ectane::Observation::ConstPtr& msg) {
-    // TODO: Work on removing repeated code here
-    // TODO: Look at what can be instanstiated elsewhere
-
     // Update dummy TF broadcaster
     if (no_robot_) {
         updateNoRobotTf(msg);
     }
 
-    int num_axials = 0;
-    int num_transversals = 0;
+    // Split the channels by frequency and coil orientation
+    std::vector<std::vector<const eddyfi_ectane::Channel*>> axials(num_frequencies_);
+    std::vector<std::vector<const eddyfi_ectane::Channel*>> transversals(num_frequencies_);
 
-    // TODO: Find a faster way to count the number of axials and transversals
     for (const auto& channel : msg->channels) {
-        if (channel.name.find("A") != std::string::npos) {
-            num_axials++;
-        } else if (channel.name.find("T") != std::string::npos) {
-            num_transversals++;
+        const channel_naming::ChannelId id = channel_naming::parseChannelName(channel.name);
+
+        if (id.frequency_index < 1 || id.frequency_index > num_frequencies_) {
+            NODELET_WARN_STREAM_THROTTLE(10, node_name_ << ": Dropping channel " << channel.name <<
+                " as its frequency is not in the crosstalk configuration");
+            continue;
+        }
+
+        if (id.coil.find("A") != std::string::npos) {
+            axials[id.frequency_index - 1].push_back(&channel);
+        } else if (id.coil.find("T") != std::string::npos) {
+            transversals[id.frequency_index - 1].push_back(&channel);
         }
     }
 
-    // Axial setup
-    // TODO: Move these instantiations out of here
-    sensor_msgs::PointCloud2 axial_point_cloud;
-    axial_point_cloud.header.stamp = msg->header.stamp;
-    axial_point_cloud.header.frame_id = msg->header.frame_id;
+    for (int i = 0; i < num_frequencies_; ++i) {
+        axial_publishers_[i].publish(toPointCloud(msg->header, axials[i]));
+        transversal_publishers_[i].publish(toPointCloud(msg->header, transversals[i]));
+    }
+}
 
-    sensor_msgs::PointCloud2Modifier axial_modifier(axial_point_cloud);
-    axial_modifier.setPointCloud2Fields(
+
+sensor_msgs::PointCloud2 EcDataToPointCloudNodelet::toPointCloud(
+    const std_msgs::Header& header,
+    const std::vector<const eddyfi_ectane::Channel*>& channels) const {
+    sensor_msgs::PointCloud2 point_cloud;
+    point_cloud.header.stamp = header.stamp;
+    point_cloud.header.frame_id = header.frame_id;
+
+    sensor_msgs::PointCloud2Modifier modifier(point_cloud);
+    modifier.setPointCloud2Fields(
         5,
         "x", 1, sensor_msgs::PointField::FLOAT32,               // 32 bits = 4 bytes
         "y", 1, sensor_msgs::PointField::FLOAT32,
         "z", 1, sensor_msgs::PointField::FLOAT32,
-        "Imaginary", 1, sensor_msgs::PointField::INT32,
-        "Real", 1, sensor_msgs::PointField::INT32
+        "Imaginary", 1, sensor_msgs::PointField::FLOAT32,
+        "Real", 1, sensor_msgs::PointField::FLOAT32
         );
 
-    axial_point_cloud.height = 1;
-    axial_point_cloud.width = num_axials;
-    axial_point_cloud.is_dense = true;
-    axial_point_cloud.point_step = 20;                           // 5 fields * 4 bytes per field
-    axial_point_cloud.row_step = axial_point_cloud.point_step * axial_point_cloud.width;
-    axial_point_cloud.data.resize(axial_point_cloud.row_step);
+    point_cloud.height = 1;
+    point_cloud.width = channels.size();
+    point_cloud.is_dense = true;
+    point_cloud.point_step = 20;                                 // 5 fields * 4 bytes per field
+    point_cloud.row_step = point_cloud.point_step * point_cloud.width;
+    point_cloud.data.resize(point_cloud.row_step);
 
-    // Transversal setup
-    // TODO: Move these instantiations out of here
-    sensor_msgs::PointCloud2 trans_point_cloud;
-    trans_point_cloud.header.stamp = msg->header.stamp;
-    trans_point_cloud.header.frame_id = msg->header.frame_id;
+    sensor_msgs::PointCloud2Iterator<float>      iterX(point_cloud, "x");
+    sensor_msgs::PointCloud2Iterator<float>      iterY(point_cloud, "y");
+    sensor_msgs::PointCloud2Iterator<float>      iterZ(point_cloud, "z");
+    sensor_msgs::PointCloud2Iterator<float>      iterImaginary(point_cloud, "Imaginary");
+    sensor_msgs::PointCloud2Iterator<float>      iterReal(point_cloud, "Real");
 
-    sensor_msgs::PointCloud2Modifier trans_modifier(trans_point_cloud);
-    trans_modifier.setPointCloud2Fields(
-        5,
-        "x", 1, sensor_msgs::PointField::FLOAT32,               // 32 bits = 4 bytes
-        "y", 1, sensor_msgs::PointField::FLOAT32,
-        "z", 1, sensor_msgs::PointField::FLOAT32,
-        "Imaginary", 1, sensor_msgs::PointField::INT32,
-        "Real", 1, sensor_msgs::PointField::INT32
-        );
+    for (const auto* channel : channels) {
+        *iterX = channel->x_position / 1000;                     // mm to m
+        *iterY = channel->y_position / 1000;                     // mm to m
+        *iterZ = 0.0;
+        *iterImaginary = channel->imaginary_reading;
+        *iterReal = channel->real_reading;
 
-    trans_point_cloud.height = 1;
-    trans_point_cloud.width = num_transversals;
-    trans_point_cloud.is_dense = true;
-    trans_point_cloud.point_step = 20;                           // 5 fields * 4 bytes per field
-    trans_point_cloud.row_step = trans_point_cloud.point_step * trans_point_cloud.width;
-    trans_point_cloud.data.resize(trans_point_cloud.row_step);
-
-    // Iterators
-    sensor_msgs::PointCloud2Iterator<float>      axialIterX(axial_point_cloud, "x");
-    sensor_msgs::PointCloud2Iterator<float>      axialIterY(axial_point_cloud, "y");
-    sensor_msgs::PointCloud2Iterator<float>      axialIterZ(axial_point_cloud, "z");
-    sensor_msgs::PointCloud2Iterator<float>      axialIterImaginary(axial_point_cloud, "Imaginary");
-    sensor_msgs::PointCloud2Iterator<float>      axialIterReal(axial_point_cloud, "Real");
-
-    sensor_msgs::PointCloud2Iterator<float>      transIterX(trans_point_cloud, "x");
-    sensor_msgs::PointCloud2Iterator<float>      transIterY(trans_point_cloud, "y");
-    sensor_msgs::PointCloud2Iterator<float>      transIterZ(trans_point_cloud, "z");
-    sensor_msgs::PointCloud2Iterator<float>      transIterImaginary(trans_point_cloud, "Imaginary");
-    sensor_msgs::PointCloud2Iterator<float>      transIterReal(trans_point_cloud, "Real");
-
-    //int32_t
-
-    for (const auto& channel : msg->channels) {
-
-        if (channel.name.find("A") != std::string::npos) {
-            *axialIterX = channel.x_position / 1000;                // mm to m
-            *axialIterY = channel.y_position / 1000;                // mm to m
-            *axialIterZ = 0.0;
-            *axialIterImaginary = channel.imaginary_reading;
-            *axialIterReal = channel.real_reading;
-
-            ++axialIterX;
-            ++axialIterY;
-            ++axialIterZ;
-            ++axialIterImaginary;
-            ++axialIterReal;
-        } else if (channel.name.find("T") != std::string::npos) {
-            *transIterX = channel.x_position / 1000;                // mm to m
-            *transIterY = channel.y_position / 1000;                // mm to m
-            *transIterZ = 0.0;
-            *transIterImaginary = channel.imaginary_reading;
-            *transIterReal = channel.real_reading;
-
-            ++transIterX;
-            ++transIterY;
-            ++transIterZ;
-            ++transIterImaginary;
-            ++transIterReal;
-        }
+        ++iterX;
+        ++iterY;
+        ++iterZ;
+        ++iterImaginary;
+        ++iterReal;
     }
-    
-    axial_publisher_.publish(axial_point_cloud);
-    transversal_publisher_.publish(trans_point_cloud);
+
+    return point_cloud;
 }
 
 
@@ -187,7 +160,7 @@ void EcDataToPointCloudNodelet::updateNoRobotTf(const eddyfi_ectane::Observation
 
     br_.sendTransform(transformStamped);
 
-    no_robot_x_pos_ += no_robot_x_pos_incrememnt_;
+    no_robot_x_pos_ += no_robot_x_pos_increment_;
 }
 
 } // namespace ec_data_to_pointcloud_namespace

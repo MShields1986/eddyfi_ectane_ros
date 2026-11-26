@@ -1,12 +1,38 @@
 #include "ectane_nodelet.h"
 
+#include <sstream>
+#include <tuple>
+
 
 
 namespace ectane_namespace {
 
+namespace {
+
+// Formats parameter values, including lists, for logging
+template <typename T>
+std::string paramToString(const T& value) {
+    std::ostringstream ss;
+    ss << value;
+    return ss.str();
+}
+
+template <typename T>
+std::string paramToString(const std::vector<T>& values) {
+    std::ostringstream ss;
+    ss << "[";
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        ss << (i ? ", " : "") << values[i];
+    }
+    ss << "]";
+    return ss.str();
+}
+
+} // namespace
+
 EctaneNodelet::EctaneNodelet()
   : rate_(10),
-    ns_("/ectane"), // TODO: Figure out how to get this when using nodelets so it isn't hardcoded
+    ns_("/ectane"),
     ectane_handler_()
 {
 }
@@ -16,50 +42,58 @@ void EctaneNodelet::onInit()
 {
     ros::NodeHandle &nh_ = getMTNodeHandle(); //getNodeHandle();
     node_name_ = getName();
-    //ns_ = ros::this_node::getNamespace();
+    ns_ = getMTNodeHandle().getNamespace();
     geom_param_prefix_ = ns_ + "/geometry/";
     crosstalk_param_prefix_ = ns_ + "/crosstalk/";
 
-    ectane_handler_.setup(
-            EctaneNodelet::paramHandler(ns_ + "/settings/ectane_address", ectane_address_),
-            EctaneNodelet::configurationsFromString(
-                EctaneNodelet::paramHandler(ns_ + "/settings/configuration", configuration_str_)
-                ),
-            EctaneNodelet::paramHandler(ns_ + "/settings/acquisition_rate", acquisition_rate_),
-            EctaneNodelet::paramHandler(ns_ + "/settings/gain", gain_),
-            EctaneNodelet::paramHandler(ns_ + "/settings/frequency", frequency_),
-            EctaneNodelet::paramHandler(ns_ + "/settings/voltage", voltage_)
-       );
-
-    ec_data_ptr_ = ectane_handler_.ec_data_ptr();
+    EctaneNodelet::paramHandler(ns_ + "/settings/ectane_address", ectane_address_);
+    EctaneNodelet::paramHandler(ns_ + "/settings/configuration", configuration_str_);
+    EctaneNodelet::paramHandler(ns_ + "/settings/acquisition_rate", acquisition_rate_);
+    EctaneNodelet::paramHandler(ns_ + "/settings/gain", gain_);
+    EctaneNodelet::paramHandler(ns_ + "/settings/frequencies", frequencies_);
+    EctaneNodelet::paramHandler(ns_ + "/settings/voltages", voltages_);
 
     getChannelNamespaces();
     getChannelConfigurations();
+    const bool frequencies_valid = validateFrequencies();
+
+    // Set up regardless so the disconnect sent on destruction is well formed
+    ectane_handler_.setup(
+            ectane_address_,
+            EctaneNodelet::configurationsFromString(configuration_str_),
+            acquisition_rate_,
+            gain_,
+            frequencies_,
+            voltages_
+       );
+
+    if (!frequencies_valid) {
+        NODELET_FATAL_STREAM(node_name_ << ": Invalid frequency configuration, not initialising the Ectane");
+        return;
+    }
 
     // Populate ROS message
     //ec_data_.header.frame_id = ns_; // Include the proceeding slash...
     ec_data_.header.frame_id = "ectane";
 
-    for (auto& entry : channel_configs_and_readings_) {
+    for (const auto& config : channel_configs_) {
         NODELET_DEBUG_STREAM(
-            "Channel: " << std::get<0>(entry) << 
-            ", time_slot: " << std::get<1>(entry) << 
-            ", input: " << std::get<2>(entry) << 
-            ", x: " << std::get<3>(entry) << 
-            ", y: " << std::get<4>(entry) << 
-            ", imaginary: " << std::get<5>(entry) << 
-            ", real: " << std::get<6>(entry)
+            "Channel: " << config.name <<
+            ", time_slot: " << config.time_slot <<
+            ", input: " << config.input <<
+            ", frequency: " << config.frequency_index <<
+            ", x: " << config.x_position <<
+            ", y: " << config.y_position
             );
 
         eddyfi_ectane::Channel channel = eddyfi_ectane::Channel();
-        channel.name = std::get<0>(entry);
-        channel.time_slot = std::get<1>(entry);
-        channel.input = std::get<2>(entry);
-        channel.x_position = std::get<3>(entry);
-        channel.y_position = std::get<4>(entry);
-        // TODO: Multiple frequency functionality goes here too
-        channel.frequency = frequency_;
-        channel.dc_voltage = voltage_;
+        channel.name = config.name;
+        channel.time_slot = config.time_slot;
+        channel.input = config.input;
+        channel.x_position = config.x_position;
+        channel.y_position = config.y_position;
+        channel.frequency = frequencies_[config.frequency_index - 1];
+        channel.dc_voltage = voltages_[config.frequency_index - 1];
 
         /*
         int n_timeslots = end(ec_data_.time_slots) - begin(ec_data_.time_slots);
@@ -105,9 +139,10 @@ template <typename ParamType>
 ParamType EctaneNodelet::paramHandler(std::string param_name, ParamType& param_value) {
     while (!nh_.hasParam(param_name)) {
         NODELET_INFO_STREAM_THROTTLE(10, node_name_ << ": Waiting for parameter " << param_name);
+        ros::Duration(0.1).sleep();
     }
     nh_.getParam(param_name, param_value);
-    NODELET_DEBUG_STREAM(node_name_ << ": Read in parameter " << param_name << " = " << param_value);
+    NODELET_DEBUG_STREAM(node_name_ << ": Read in parameter " << param_name << " = " << paramToString(param_value));
     return param_value;
 }
 
@@ -132,8 +167,8 @@ Configurations EctaneNodelet::configurationsFromString(std::string str) {
 void EctaneNodelet::getChannelNamespaces() {
     // TODO: Bits in here that can be split out into other methods
     std::vector<std::string> param_names;
-    std::vector<std::string> channels_from_geom_params;
-    std::vector<std::string> channels_from_crosstalk_param;
+    std::vector<std::string> coils_from_geom_params;
+    std::vector<std::string> channels_from_crosstalk_params;
 
     nh_.getParamNames(param_names);
 
@@ -142,77 +177,91 @@ void EctaneNodelet::getChannelNamespaces() {
             std::string tmp;
             tmp = entry.substr(geom_param_prefix_.size());         // Remove the namespace prefix
             tmp = tmp.substr(0, tmp.find("/") + 1);                // Remove anything under the channel namespace
-            channels_from_geom_params.push_back(tmp);
+            coils_from_geom_params.push_back(tmp);
         } else if (entry.find(crosstalk_param_prefix_) != std::string::npos) {
             std::string tmp;
             tmp = entry.substr(crosstalk_param_prefix_.size());    // Remove the namespace prefix
             tmp = tmp.substr(0, tmp.find("/") + 1);                // Remove anything under the channel namespace
-            channels_from_crosstalk_param.push_back(tmp);
+            channels_from_crosstalk_params.push_back(tmp);
         }
     }
 
-    uniqueElements(channels_from_geom_params);
-    uniqueElements(channels_from_crosstalk_param);
+    uniqueElements(coils_from_geom_params);
+    uniqueElements(channels_from_crosstalk_params);
 
-    // TODO: Handle multiple frequencies
-    if (channels_from_geom_params.size() != channels_from_crosstalk_param.size()) {
-        NODELET_ERROR_STREAM("Geometry and crosstalk parameter coil counts do not match: Check configuration and launch files");
-    } else {
-        for(unsigned i = 0; i < channels_from_geom_params.size(); ++i) {
-            if (channels_from_geom_params[i] != channels_from_crosstalk_param[i]) {
-                NODELET_ERROR_STREAM("Geometry and crosstalk parameter coil counts do not match: Check configuration and launch files");
-                break;
-            }
-        }
+    // Every frequency channel of a coil shares the coil's geometry
+    std::vector<std::string> coils_from_crosstalk_params;
+    for (const auto& entry : channels_from_crosstalk_params) {
+        coils_from_crosstalk_params.push_back(
+            channel_naming::parseChannelName(entry.substr(0, entry.find("/"))).coil + "/"
+            );
+    }
+    uniqueElements(coils_from_crosstalk_params);
+
+    if (coils_from_geom_params != coils_from_crosstalk_params) {
+        NODELET_ERROR_STREAM("Geometry and crosstalk parameter coils do not match: Check configuration and launch files");
     }
 
-    channel_namespaces_ = channels_from_geom_params;
+    channel_namespaces_ = channels_from_crosstalk_params;
 }
 
 
 void EctaneNodelet::getChannelConfigurations() {
-    std::string name;
-    float x;
-    float y;
-    int time_slot;
-    int input;
-    std::tuple<std::string, int, int, float, float, int, int> config_and_readings;
-
-    for (auto& entry : channel_namespaces_) {
-        name = entry.substr(0, entry.find("/"));
-        EctaneNodelet::paramHandler(crosstalk_param_prefix_ + entry + "time_slot", time_slot);
-        EctaneNodelet::paramHandler(crosstalk_param_prefix_ + entry + "input", input);
-        EctaneNodelet::paramHandler(geom_param_prefix_ + entry + "x", x);
-        EctaneNodelet::paramHandler(geom_param_prefix_ + entry + "y", y);
-        config_and_readings = {
-            name, 
-            time_slot, 
-            input, 
-            x, 
-            y, 
-            0, 
-            0
-        };
-        channel_configs_and_readings_.push_back(config_and_readings);
+    for (const auto& entry : channel_namespaces_) {
+        ChannelConfig config;
+        config.name = entry.substr(0, entry.find("/"));
+        const channel_naming::ChannelId id = channel_naming::parseChannelName(config.name);
+        config.frequency_index = id.frequency_index;
+        EctaneNodelet::paramHandler(crosstalk_param_prefix_ + entry + "time_slot", config.time_slot);
+        EctaneNodelet::paramHandler(crosstalk_param_prefix_ + entry + "input", config.input);
+        EctaneNodelet::paramHandler(geom_param_prefix_ + id.coil + "/x", config.x_position);
+        EctaneNodelet::paramHandler(geom_param_prefix_ + id.coil + "/y", config.y_position);
+        channel_configs_.push_back(config);
     }
 
-    // Sort by time slot
-    std::sort(begin(channel_configs_and_readings_), end(channel_configs_and_readings_), [](auto const &t1, auto const &t2) {
-        return std::get<1>(t1) < std::get<1>(t2);
+    // Match the C SDK data stream, which is ordered by time slot, then input, then frequency
+    std::sort(begin(channel_configs_), end(channel_configs_), [](const ChannelConfig& a, const ChannelConfig& b) {
+        return std::tie(a.time_slot, a.input, a.frequency_index) < std::tie(b.time_slot, b.input, b.frequency_index);
     });
 
-    // Sort by input
-    // TODO: Surely a better way to do this using std::sort or std::partialsort
-    // TODO: Loop until sorted rather than just looping 20 times
-    for(unsigned j = 1; j < 20; ++j) {
-        for(unsigned i = 1; i < channel_configs_and_readings_.size(); ++i) {
-            if (std::get<1>(channel_configs_and_readings_[i]) == std::get<1>(channel_configs_and_readings_[i-1])) {
-                if (std::get<2>(channel_configs_and_readings_[i]) < std::get<2>(channel_configs_and_readings_[i-1])) {
-                    std::iter_swap(channel_configs_and_readings_.begin() + i-1, channel_configs_and_readings_.begin() + i);
-                }
-            }
+    num_frequencies_ = 0;
+    for (const auto& config : channel_configs_) {
+        num_frequencies_ = std::max(num_frequencies_, config.frequency_index);
+    }
+}
+
+
+bool EctaneNodelet::validateFrequencies() {
+    for (const auto& config : channel_configs_) {
+        if (config.frequency_index < 1) {
+            NODELET_ERROR_STREAM(node_name_ << ": Channel " << config.name << " has an invalid frequency index");
+            return false;
         }
     }
+
+    if (num_frequencies_ > kMaxFrequencies) {
+        NODELET_ERROR_STREAM(node_name_ << ": Configuration uses " << num_frequencies_ <<
+            " frequencies but the Ectane supports at most " << kMaxFrequencies);
+        return false;
+    }
+
+    if (frequencies_.size() < (std::size_t)num_frequencies_ || voltages_.size() < (std::size_t)num_frequencies_) {
+        NODELET_ERROR_STREAM(node_name_ << ": Configuration " << configuration_str_ << " uses " << num_frequencies_ <<
+            " frequencies but " << frequencies_.size() << " frequencies and " << voltages_.size() <<
+            " voltages are set: Check settings");
+        return false;
+    }
+
+    if (frequencies_.size() > (std::size_t)num_frequencies_ || voltages_.size() > (std::size_t)num_frequencies_) {
+        NODELET_INFO_STREAM(node_name_ << ": Configuration " << configuration_str_ << " uses " << num_frequencies_ <<
+            " frequencies, ignoring the remaining frequencies and voltages in settings");
+        frequencies_.resize(num_frequencies_);
+        voltages_.resize(num_frequencies_);
+    }
+
+    NODELET_INFO_STREAM(node_name_ << ": Frequencies " << paramToString(frequencies_) <<
+        " Hz at voltages " << paramToString(voltages_) << " V");
+    return true;
 }
 
 
@@ -292,42 +341,36 @@ bool EctaneNodelet::streamData(eddyfi_ectane::StreamData::Request& request,
 }
 
 
-void EctaneNodelet::populateEcData() {
-    int i = 0;
+bool EctaneNodelet::populateEcData() {
+    if (ec_data_raw_.size() < ec_data_.channels.size()) {
+        NODELET_WARN_STREAM_THROTTLE(10, node_name_ << ": Received " << ec_data_raw_.size() <<
+            " samples for " << ec_data_.channels.size() << " channels, skipping");
+        return false;
+    }
 
-    // TODO: Don't think I really need to be looping entry here as I am just looping indexing i
-    //       This would make more sense maybe if it was in the ectane_handler
-    for (auto& entry : channel_configs_and_readings_) {
-        entry = std::tuple(
-            std::get<0>(entry),                                               // Channel name
-            std::get<1>(entry),                                               // time_slot
-            std::get<2>(entry),                                               // input
-            std::get<3>(entry),                                               // x_pos
-            std::get<4>(entry),                                               // y_pos
-            (int32_t)(int16_t)((((*ec_data_ptr_)[i]) >> 16) & 0x0000FFFF),    // Imaginary value
-            (int32_t)(int16_t)((((*ec_data_ptr_)[i]) >> 0) & 0x0000FFFF)      // Real value
-            );
+    // Channels are in the same order as the C SDK data stream
+    // TODO: This would make more sense maybe if it was in the ectane_handler
+    for (std::size_t i = 0; i < ec_data_.channels.size(); ++i) {
+        const int32_t imaginary = (int32_t)(int16_t)(((ec_data_raw_[i]) >> 16) & 0x0000FFFF);
+        const int32_t real = (int32_t)(int16_t)(((ec_data_raw_[i]) >> 0) & 0x0000FFFF);
 
-        NODELET_DEBUG_STREAM("Buffer: " << (*ec_data_ptr_)[i]);
+        NODELET_DEBUG_STREAM("Buffer: " << ec_data_raw_[i]);
         NODELET_DEBUG_STREAM(
-            "Name: " << std::get<0>(entry) << " (r=" << std::get<6>(entry) << ",i=" << std::get<5>(entry) << ")"
+            "Name: " << ec_data_.channels[i].name << " (r=" << real << ",i=" << imaginary << ")"
             );
 
-        //std::complex<int> reading(std::get<6>(entry), std::get<5>(entry));
-        std::complex<double> reading((double)std::get<6>(entry), (double)std::get<5>(entry));
+        std::complex<double> reading((double)real, (double)imaginary);
 
         // TODO: Need to appropriately phase rotate the reading
-        double shift(3.14159 / 2);
-        //double shift(0.0);
+        double shift(M_PI / 2.0);
         double mag = std::abs(reading);
         double theta = std::arg(reading) + shift;
         reading = std::complex(mag * cos(theta), mag * sin(theta));
 
         ec_data_.channels[i].imaginary_reading = (float)std::imag(reading);
         ec_data_.channels[i].real_reading = (float)std::real(reading);
-
-        i++;
     }
+    return true;
 }
 
 
@@ -337,11 +380,18 @@ void EctaneNodelet::timerCb(const ros::TimerEvent& event){
     if (ectane_handler_.state() == State::acquire_data) {
         NODELET_INFO_STREAM_THROTTLE(60, node_name_ << ": Streaming data...");
 
-        ectane_handler_.readData();
+        try {
+            ec_data_raw_ = ectane_handler_.readData();
+        } catch (const std::exception& e) {
+            NODELET_WARN_STREAM_THROTTLE(10, node_name_ << ": Data read failed: " << e.what());
+            return;
+        }
+
         ec_data_.header.stamp = ros::Time::now();
-        
-        populateEcData();
-        publisher_.publish(ec_data_);
+
+        if (populateEcData()) {
+            publisher_.publish(ec_data_);
+        }
     } else {
         NODELET_INFO_STREAM_THROTTLE(60, node_name_ << ": Not streaming data...");
     }
