@@ -1,5 +1,6 @@
 #include "ectane_nodelet.h"
 
+#include <chrono>
 #include <sstream>
 #include <tuple>
 
@@ -33,7 +34,9 @@ std::string paramToString(const std::vector<T>& values) {
 EctaneNodelet::EctaneNodelet()
   : rate_(10),
     ns_("/ectane"),
-    ectane_handler_()
+    ectane_handler_(),
+    streaming_(false),
+    stopping_(false)
 {
 }
 
@@ -119,7 +122,7 @@ void EctaneNodelet::onInit()
     balance_service_ = nh_.advertiseService(ns_ + "/balance_device", &EctaneNodelet::balanceDevice, this);
     stream_service_ = nh_.advertiseService(ns_ + "/stream_data", &EctaneNodelet::streamData, this);
 
-    timer_ = nh_.createTimer(ros::Duration(1 / acquisition_rate_), &EctaneNodelet::timerCb, this);
+    acquisition_thread_ = std::thread(&EctaneNodelet::acquisitionLoop, this);
 
     NODELET_INFO_STREAM(node_name_ << ": Node initialised");
 }
@@ -128,6 +131,13 @@ void EctaneNodelet::onInit()
 // TODO: Consider moving this into the ectane_handler
 EctaneNodelet::~EctaneNodelet() {
     NODELET_INFO_STREAM(node_name_ << ": Shutting down...");
+
+    stopping_ = true;
+    if (acquisition_thread_.joinable()) {
+        ectane_handler_.interruptReadData();
+        acquisition_thread_.join();
+    }
+
     ectane_handler_.disconnectDevice();
     // TODO: Check to see if the C SDK handshakes to confirm state receipt
     ros::Duration(0.5).sleep();
@@ -310,6 +320,7 @@ bool EctaneNodelet::balanceDevice(eddyfi_ectane::BalanceDevice::Request& request
     if (request.balance) {
         NODELET_INFO_STREAM(node_name_ << ": Balancing device...");
         ectane_handler_.balanceDevice();
+        updateStreaming();
         // TODO: Check to see if the C SDK handshakes to confirm state receipt
         response.success = true;
         return true;
@@ -326,6 +337,7 @@ bool EctaneNodelet::streamData(eddyfi_ectane::StreamData::Request& request,
     if (request.stream_data) {
         NODELET_INFO_STREAM(node_name_ << ": Beginning data stream...");
         ectane_handler_.acquireData();
+        updateStreaming();
         // TODO: Check to see if the C SDK handshakes to confirm state receipt
         response.success = true;
         return true;
@@ -334,6 +346,7 @@ bool EctaneNodelet::streamData(eddyfi_ectane::StreamData::Request& request,
         NODELET_INFO_STREAM(node_name_ << ": Stopping data stream...");
         ectane_handler_.stopData();
         ectane_handler_.doNothing();
+        updateStreaming();
         // TODO: Check to see if the C SDK handshakes to confirm state receipt
         response.success = true;
         return true;
@@ -374,17 +387,35 @@ bool EctaneNodelet::populateEcData() {
 }
 
 
-void EctaneNodelet::timerCb(const ros::TimerEvent& event){
-    NODELET_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
+// Data is read while the C SDK is acquiring, as only the service callbacks change its state
+void EctaneNodelet::updateStreaming() {
+    streaming_ = ectane_handler_.state() == State::acquire_data;
+}
 
-    if (ectane_handler_.state() == State::acquire_data) {
+
+void EctaneNodelet::acquisitionLoop() {
+    while (!stopping_ && ros::ok()) {
+        NODELET_INFO_STREAM_THROTTLE(600, node_name_ << ": Node running");
+
+        if (!streaming_) {
+            NODELET_INFO_STREAM_THROTTLE(60, node_name_ << ": Not streaming data...");
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            continue;
+        }
+
         NODELET_INFO_STREAM_THROTTLE(60, node_name_ << ": Streaming data...");
 
         try {
             ec_data_raw_ = ectane_handler_.readData();
         } catch (const std::exception& e) {
             NODELET_WARN_STREAM_THROTTLE(10, node_name_ << ": Data read failed: " << e.what());
-            return;
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            continue;
+        }
+
+        // Woken by the destructor rather than by data
+        if (stopping_) {
+            break;
         }
 
         ec_data_.header.stamp = ros::Time::now();
@@ -392,8 +423,6 @@ void EctaneNodelet::timerCb(const ros::TimerEvent& event){
         if (populateEcData()) {
             publisher_.publish(ec_data_);
         }
-    } else {
-        NODELET_INFO_STREAM_THROTTLE(60, node_name_ << ": Not streaming data...");
     }
 }
 

@@ -46,6 +46,11 @@ std::vector<int> EctaneHandler::readData() {
 }
 
 
+void EctaneHandler::interruptReadData() {
+    receiver_.interrupt();
+}
+
+
 void EctaneHandler::updateCommandPacket() {
     command_packet_.state = state_;
     strncpy(command_packet_.ip_address, ectane_address_.c_str(), sizeof(command_packet_.ip_address) - 1);

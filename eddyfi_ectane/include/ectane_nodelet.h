@@ -2,8 +2,10 @@
 
 #include <signal.h>
 #include <algorithm>
+#include <atomic>
 #include <complex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <ros/ros.h>
@@ -61,7 +63,8 @@ private:
     bool                                 validateFrequencies();
     void                                 uniqueElements(std::vector<std::string>& vec);
 
-    void                                 timerCb(const ros::TimerEvent& event);
+    void                                 updateStreaming();
+    void                                 acquisitionLoop();
 
     ros::NodeHandle                                          nh_;
     ros::Rate                                                rate_;
@@ -85,11 +88,14 @@ private:
     ros::ServiceServer                                       balance_service_;
     ros::ServiceServer                                       stream_service_;
 
-    ros::Timer                                               timer_;
-
     EctaneHandler                                            ectane_handler_;
     std::vector<int>                                         ec_data_raw_;
     eddyfi_ectane::Observation                               ec_data_;
+
+    // Reading the C SDK data stream blocks, so it runs on its own thread rather than holding up a callback
+    std::atomic<bool>                                        streaming_;
+    std::atomic<bool>                                        stopping_;
+    std::thread                                              acquisition_thread_;
 };
 
 } // namespace ectane_namespace

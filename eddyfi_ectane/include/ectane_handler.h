@@ -30,6 +30,8 @@ public:
 
     // Blocks until the C SDK sends a data cycle, throws on a socket error
     std::vector<int>                readData();
+    // Makes a readData() blocked in another thread return
+    void                            interruptReadData();
 
     void                            doNothing();
     void                            commandSocketInitialise();
