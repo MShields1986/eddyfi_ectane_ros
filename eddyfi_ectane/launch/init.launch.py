@@ -116,7 +116,7 @@ def launch_setup(context):
     # Recording
     topics = LaunchConfiguration('rosbag_topics').perform(context).strip('[]').replace(',', ' ').split()
     rosbag = ExecuteProcess(
-        cmd=['ros2', 'bag', 'record', '--output', LaunchConfiguration('rosbag_name'), *topics],
+        cmd=['ros2', 'bag', 'record', '--output', LaunchConfiguration('rosbag_name'), '--topics', *topics],
         condition=IfCondition(LaunchConfiguration('logging')),
         output='screen',
     )
