@@ -2,6 +2,19 @@
 ROS driver for use with the Eddyfi Ectane SDK
 
 
+## Citation
+If you use this repository for your research, please cite the following paper where it was first shared.
+
+    @misc{shields2026ssrn,
+        title = "``Process-to-Part'' Eddy Current Array Inspection of an Aluminium Fuselage Section",
+        author = "Matthew Shields and Randika K. W. Vithanage and Gareth Pierce and Ehsan Mohseni and Rebecca Moos and Gordon Dobie and Charles Macleod and Michael Grosser and Tom O'Hare and Gavin Munro and Janet O'Brien-O'Reilly",
+        year = "2026",
+        note = "SSRN preprint",
+        doi = "10.2139/ssrn.6303235",
+        url = "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6303235",
+    }
+
+
 ## Multi-frequency acquisition
 The `hf_probe_axial_and_transversal_4_channels` and `lf_probe_axial_and_transversal_4_channels` configurations acquire four frequencies in a single pass. The excitation for each frequency is set in `eddyfi_ectane/config/settings.yaml`:
 ```yaml
