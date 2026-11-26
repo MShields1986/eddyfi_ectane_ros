@@ -2,6 +2,19 @@
 ROS 2 driver for use with the Eddyfi Ectane SDK, targeting ROS 2 Jazzy Jalisco on Ubuntu 24.04. The ROS 2 Lyrical Luth driver is on `main`, and the ROS 1 Noetic driver is on the `noetic` branch.
 
 
+## Citation
+If you use this repository for your research, please cite the following paper where it was first shared.
+
+    @misc{shields2026ssrn,
+        title = "``Process-to-Part'' Eddy Current Array Inspection of an Aluminium Fuselage Section",
+        author = "Matthew Shields and Randika K. W. Vithanage and Gareth Pierce and Ehsan Mohseni and Rebecca Moos and Gordon Dobie and Charles Macleod and Michael Grosser and Tom O'Hare and Gavin Munro and Janet O'Brien-O'Reilly",
+        year = "2026",
+        note = "SSRN preprint",
+        doi = "10.2139/ssrn.6303235",
+        url = "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6303235",
+    }
+
+
 ## Build
 Clone into a colcon workspace and build:
 ```bash
