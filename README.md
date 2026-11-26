@@ -1,5 +1,5 @@
 # eddyfi_ectane_ros
-ROS driver for use with the Eddyfi Ectane SDK
+ROS driver for use with the Eddyfi Ectane SDK, targeting ROS 1 Noetic on Ubuntu 20.04. The ROS 2 Lyrical Luth driver is on `main`, and the ROS 2 Jazzy Jalisco and Humble Hawksbill drivers are on the `jazzy` and `humble` branches.
 
 
 ## Citation
