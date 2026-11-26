@@ -1,17 +1,19 @@
 # eddyfi_ectane_ros
-ROS driver for use with the Eddyfi Ectane SDK, targeting ROS 1 Noetic on Ubuntu 20.04. The ROS 2 Lyrical Luth driver is on `main`, and the ROS 2 Jazzy Jalisco and Humble Hawksbill drivers are on the `jazzy` and `humble` branches.
+ROS driver for use with the Eddyfi Ectane SDK ([video of it in use](https://vimeo.com/1123786342)), targeting ROS 1 Noetic on Ubuntu 20.04. The ROS 2 Lyrical Luth driver is on `main`, and the ROS 2 Jazzy Jalisco and Humble Hawksbill drivers are on the `jazzy` and `humble` branches.
 
 
 ## Citation
-If you use this repository for your research, please cite the following paper where it was first shared.
+If you use this repository for your research, please cite the following conference talk where it was first shared.
 
-    @misc{shields2026ssrn,
-        title = "``Process-to-Part'' Eddy Current Array Inspection of an Aluminium Fuselage Section",
-        author = "Matthew Shields and Randika K. W. Vithanage and Gareth Pierce and Ehsan Mohseni and Rebecca Moos and Gordon Dobie and Charles Macleod and Michael Grosser and Tom O'Hare and Gavin Munro and Janet O'Brien-O'Reilly",
-        year = "2026",
-        note = "SSRN preprint",
-        doi = "10.2139/ssrn.6303235",
-        url = "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6303235",
+    @conference{shields2025roscon,
+        title = "{ROS} Enabled Non-Destructive Testing for Aerospace Manufacturing",
+        author = "Matthew Shields",
+        booktitle = "ROSCon UK 2025",
+        address = "Edinburgh, UK",
+        year = "2025",
+        month = sep,
+        note = "Conference date: 15-09-2025 Through 17-09-2025",
+        url = "https://vimeo.com/1123786342",
     }
 
 
