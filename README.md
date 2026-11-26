@@ -1,12 +1,12 @@
 # eddyfi_ectane_ros
-ROS 2 driver for use with the Eddyfi Ectane SDK, targeting ROS 2 Lyrical Luth on Ubuntu 26.04. The ROS 1 Noetic driver is on the `noetic` branch.
+ROS 2 driver for use with the Eddyfi Ectane SDK, targeting ROS 2 Jazzy Jalisco on Ubuntu 24.04. The ROS 2 Lyrical Luth driver is on `main`, and the ROS 1 Noetic driver is on the `noetic` branch.
 
 
 ## Build
 Clone into a colcon workspace and build:
 ```bash
 cd ~/ros2_ws/src
-git clone -b lyrical https://github.com/MShields1986/eddyfi_ectane_ros.git
+git clone -b jazzy https://github.com/MShields1986/eddyfi_ectane_ros.git
 cd ~/ros2_ws
 rosdep install --from-paths src --ignore-src -y
 colcon build --packages-select eddyfi_ectane

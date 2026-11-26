@@ -29,7 +29,7 @@ ReconstructionNode::ReconstructionNode(const rclcpp::NodeOptions& options)
     recon_frame_id_ = node_utils::requiredParam(*this, "reconstruction.recon_frame_id").as_string();
 
     tfBuffer_ = std::make_unique<tf2_ros::Buffer>(get_clock());
-    tfListener_ = std::make_unique<tf2_ros::TransformListener>(*tfBuffer_, *this);
+    tfListener_ = std::make_unique<tf2_ros::TransformListener>(*tfBuffer_, this);
 
     subscriber_group_ = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     proc_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
