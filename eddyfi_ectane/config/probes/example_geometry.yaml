@@ -1,4 +1,6 @@
-geometry:
-  A01:
-    x: 0.0
-    y: 0.0
+/**:
+  ros__parameters:
+    geometry:
+      A01:
+        x: 0.0
+        y: 0.0

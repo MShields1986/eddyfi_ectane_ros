@@ -16,6 +16,8 @@ class UdpClientBoost {
 public:
     UdpClientBoost(std::string ip_address, int port);
     std::vector<int>                   receive();
+    // Wakes a receive() blocked in another thread by sending it an empty datagram
+    void                               interrupt();
     //void                               send(const std::string& message);
 
 private:

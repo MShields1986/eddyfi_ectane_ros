@@ -44,6 +44,18 @@ std::vector<int> UdpClientBoost::receive() {
     return data;
 }
 
+
+void UdpClientBoost::interrupt() {
+    boost::system::error_code error;
+    boost::asio::ip::udp::socket sender(io_context_);
+    sender.open(boost::asio::ip::udp::v4(), error);
+    if (!error) {
+        sender.send_to(boost::asio::buffer(&port_, 0),
+                       boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::loopback(), port_),
+                       0, error);
+    }
+}
+
 /*
 void UdpClientBoost::send(const std::string& message) {
   const std::string msg = message;

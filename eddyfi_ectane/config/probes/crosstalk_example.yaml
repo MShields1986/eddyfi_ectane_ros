@@ -1,4 +1,6 @@
-crosstalk:
-  A01:
-    time_slot:  1
-    input:  1
+/**:
+  ros__parameters:
+    crosstalk:
+      A01:
+        time_slot:  1
+        input:  1

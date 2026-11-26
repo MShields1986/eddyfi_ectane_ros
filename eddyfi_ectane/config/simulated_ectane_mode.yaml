@@ -1,9 +1,11 @@
-# Basic settings
-ectane_address: "127.0.0.1"
-acquisition_rate: 200 # Not parsed by the example configuration, hardcoded to 5kHz
-gain: 23
-frequencies: [50000]
-voltages: [7]
-# No robot mode settings
-no_robot_extrinsic_frame_id: "fixture_1"
-no_robot_x_pos_increment: 0.001
+/**:
+  ros__parameters:
+    # Basic settings
+    ectane_address: "127.0.0.1"
+    acquisition_rate: 200 # Not parsed by the example configuration, hardcoded to 5kHz
+    gain: 23
+    frequencies: [50000]
+    voltages: [7.0]
+    # No robot mode settings
+    no_robot_extrinsic_frame_id: "fixture_1"
+    no_robot_x_pos_increment: 0.001
