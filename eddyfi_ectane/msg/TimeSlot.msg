@@ -1,1 +1,1 @@
-eddyfi_ectane/Channel[] channels
+Channel[] channels

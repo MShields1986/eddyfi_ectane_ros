@@ -1,27 +1,31 @@
-# Basic settings
-ectane_address: "192.168.2.35"
+/**:
+  ros__parameters:
+    # Basic settings
+    ectane_address: "192.168.2.35"
 
-# Max Acquisition Rates
-# lf_probe_axial_1_channel achieves ~111 Hz with a goal of 2000 Hz
-# lf_probe_transversal_1_channel achieves ~111 Hz with a goal of 2000 Hz
-# lf_probe_axial_and_transversal_1_channel achieves ~111 Hz with a goal of 2000 Hz
+    # Max Acquisition Rates
+    # lf_probe_axial_1_channel achieves ~111 Hz with a goal of 2000 Hz
+    # lf_probe_transversal_1_channel achieves ~111 Hz with a goal of 2000 Hz
+    # lf_probe_axial_and_transversal_1_channel achieves ~111 Hz with a goal of 2000 Hz
 
-# Rule of thumb: acquisition_rate = 1 / (timeslots * (2.7 / freq))
-# For multi-frequency configurations use the lowest frequency
+    # Rule of thumb: acquisition_rate = 1 / (timeslots * (2.7 / freq))
+    # For multi-frequency configurations use the lowest frequency
 
-acquisition_rate: 100
+    acquisition_rate: 100
 
-gain: 23 # 23 dB is the minimum
+    gain: 23 # 23 dB is the minimum
 
-# Excitation per frequency channel: *_1_channel configurations use the first entry, *_4_channels configurations
-# use the first four (crosstalk channels F1... to F4...). The C SDK truncates voltages to whole volts.
-frequencies: [5000, 10000, 20000, 50000]
-voltages: [7, 7, 7, 7]
-# No robot mode settings
-no_robot_extrinsic_frame_id: "fixture_1"
-no_robot_x_pos_increment: 0.001
+    # Excitation per frequency channel: *_1_channel configurations use the first entry, *_4_channels configurations
+    # use the first four (crosstalk channels F1... to F4...). List every value with the same type, e.g. 7.0 rather
+    # than 7, as ROS 2 rejects lists that mix integers and decimals. Fractional voltages need a C SDK (demo.exe)
+    # built from hostdemo.c with strtof voltage parsing, older builds truncate them to whole volts.
+    frequencies: [5000, 10000, 20000, 50000]
+    voltages: [7.0, 7.0, 7.0, 7.0]
+    # No robot mode settings
+    no_robot_extrinsic_frame_id: "fixture_1"
+    no_robot_x_pos_increment: 0.001
 
-reconstruction:
-  recon_frame_id: "fixture_1"
-  process_rate: 100
-  publish_rate: 5
+    reconstruction:
+      recon_frame_id: "fixture_1"
+      process_rate: 100
+      publish_rate: 5

@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 
-#include <ros/ros.h>
-
 
 // Crosstalk channels in multi-frequency configurations are named F<n><coil>, e.g. F2A05 is coil A05
 // at the configuration's second frequency. Names without the prefix, e.g. A05, are at the first frequency.
@@ -39,29 +37,28 @@ inline std::string frequencyNamespace(int frequency_index, int num_frequencies) 
 }
 
 
-// Number of frequency channels in the crosstalk configuration, waiting for it to be loaded
-inline int waitForNumFrequencies(const std::string& crosstalk_param_prefix) {
-    while (ros::ok()) {
-        std::vector<std::string> param_names;
-        ros::param::getParamNames(param_names);
-
-        int num_frequencies = 0;
-        for (const auto& param_name : param_names) {
-            if (param_name.compare(0, crosstalk_param_prefix.size(), crosstalk_param_prefix) == 0) {
-                std::string channel = param_name.substr(crosstalk_param_prefix.size());
-                channel = channel.substr(0, channel.find("/"));
-                num_frequencies = std::max(num_frequencies, parseChannelName(channel).frequency_index);
-            }
+// Sorted, unique names directly under a parameter prefix, e.g. F1A02 from crosstalk.F1A02.time_slot
+inline std::vector<std::string> namesUnder(const std::vector<std::string>& param_names, const std::string& prefix) {
+    std::vector<std::string> names;
+    for (const auto& param_name : param_names) {
+        if (param_name.compare(0, prefix.size(), prefix) == 0) {
+            const std::string rest = param_name.substr(prefix.size());
+            names.push_back(rest.substr(0, rest.find('.')));
         }
-
-        if (num_frequencies > 0) {
-            return num_frequencies;
-        }
-
-        ROS_INFO_STREAM_THROTTLE(10, "Waiting for crosstalk parameters under " << crosstalk_param_prefix);
-        ros::Duration(0.1).sleep();
     }
-    return 0;
+    std::sort(names.begin(), names.end());
+    names.erase(std::unique(names.begin(), names.end()), names.end());
+    return names;
+}
+
+
+// Number of frequency channels, i.e. the highest F<n> prefix
+inline int numFrequencies(const std::vector<std::string>& channel_names) {
+    int num_frequencies = 0;
+    for (const auto& name : channel_names) {
+        num_frequencies = std::max(num_frequencies, parseChannelName(name).frequency_index);
+    }
+    return num_frequencies;
 }
 
 } // namespace channel_naming
