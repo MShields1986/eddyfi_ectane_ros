@@ -29,7 +29,7 @@ rosdep install --from-paths src --ignore-src -y
 colcon build --packages-select eddyfi_ectane
 source install/setup.bash
 ```
-The socket classes come from [boost_asio_socket_wrappers](https://github.com/MShields1986/boost_asio_socket_wrappers), which CMake clones at a pinned commit when the package is first configured, so that needs network access.
+The socket classes come from [boost_asio_socket_wrappers](https://github.com/MShields1986/boost_asio_socket_wrappers), which CMake clones at a pinned release when the package is first configured, so that needs network access.
 
 Or build it in Docker, and run the driver on the host's network so the C SDK can reach it:
 ```bash

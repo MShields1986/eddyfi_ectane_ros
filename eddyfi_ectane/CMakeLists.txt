@@ -59,12 +59,12 @@ find_package(tf2_sensor_msgs REQUIRED)
 find_package(Boost REQUIRED CONFIG)
 find_package(Threads REQUIRED)
 
-# Socket classes for the C SDK's connections, pinned to a commit so the build cannot change underneath the driver
+# Socket classes for the C SDK's connections, pinned to a release so the build cannot change underneath the driver
 include(FetchContent)
 FetchContent_Declare(
   simple_boost_asio_sockets
   GIT_REPOSITORY https://github.com/MShields1986/boost_asio_socket_wrappers
-  GIT_TAG        364cd5ded006d302ab6c1b99e06febf81595f361
+  GIT_TAG        v0.1.0
 )
 FetchContent_MakeAvailable(simple_boost_asio_sockets)
 
