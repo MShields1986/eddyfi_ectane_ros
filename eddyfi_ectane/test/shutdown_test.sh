@@ -26,7 +26,7 @@ cpu() {   # Percentage of a CPU the component container uses over 3 s
 }
 
 ros2 service call /ectane/stream_data eddyfi_ectane/srv/StreamData "{stream_data: true}" > /dev/null
-check "timeout 20 ros2 topic echo --once /ectane/eddy_current_data --field header > /dev/null 2>&1" \
+check "timeout 20 ros2 topic echo --once /ectane/eddy_current_data eddyfi_ectane/msg/Observation --field header > /dev/null 2>&1" \
     "observations are published while streaming"
 
 if [ "$SCENARIO" = stalled ]; then
