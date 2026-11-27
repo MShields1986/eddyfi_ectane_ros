@@ -5,7 +5,8 @@ Stands in for hostdemo.c from eddyfi_ectane_sdk_ros: connects to the driver's co
 it is commanded to acquire data, streams a data cycle to UDP 24011 at a fixed rate.
 
 The stream contains the channels enabled in Configurations.h for the configuration, ordered by time slot, input, then
-frequency, as the C SDK sends them. The values are not eddy current signals: each word holds its position in the
+frequency, as the C SDK sends them. Without Configurations.h, the channels are taken from the driver's crosstalk
+configuration for the configuration instead, so the driver can be tested without the C SDK. The values are not eddy current signals: each word holds its position in the
 stream, real = position + 1 and imaginary = 1000 + position, the same every cycle, so the points in each cloud can be
 traced back to the channel they came from.
 
@@ -24,6 +25,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DATA_STRUCTURES_H = os.path.join(HERE, '..', 'include', 'c_sdk_data_structures.h')
 # Where eddyfi_ectane_sdk_ros is when cloned alongside this repository
 DEFAULT_CONFIGURATIONS_H = os.path.join(HERE, '..', '..', '..', 'eddyfi_ectane_sdk_ros', 'src', 'Configurations.h')
+CROSSTALK_DIR = os.path.join(HERE, '..', 'config', 'probes')
 
 COMMAND_PORT = 24010
 DATA_PORT = 24011
@@ -50,18 +52,51 @@ def enabled_channels(configurations_h, case):
     return sorted({(int(ts), int(inp), int(fr)) for inp, ts, fr in found})
 
 
+def crosstalk_channels(crosstalk_yaml):
+    """(time slot, input, frequency) of each channel in the driver's crosstalk configuration, zero based, in stream
+    order. Channels named F<n><coil> are at frequency n, and the rest at the first frequency."""
+    import yaml
+
+    def find(node):
+        if isinstance(node, dict):
+            if 'crosstalk' in node:
+                return node['crosstalk']
+            for value in node.values():
+                found = find(value)
+                if found is not None:
+                    return found
+        return None
+
+    crosstalk = find(yaml.safe_load(open(crosstalk_yaml)))
+    if not crosstalk:
+        sys.exit('No crosstalk channels in %s' % crosstalk_yaml)
+    channels = set()
+    for name, channel in crosstalk.items():
+        m = re.match(r'F(\d+).', name)
+        frequency = int(m.group(1)) if m else 1
+        channels.add((channel['time_slot'] - 1, channel['input'] - 1, frequency - 1))
+    return sorted(channels)
+
+
 def main():
     names = configuration_names()
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('configuration', choices=names, metavar='configuration',
                         help='the configuration the driver is launched with: ' + ', '.join(names))
-    parser.add_argument('--configurations-h', default=DEFAULT_CONFIGURATIONS_H,
-                        help="the C SDK's Configurations.h (default: %(default)s)")
+    parser.add_argument('--configurations-h',
+                        help="the C SDK's Configurations.h (default: %s, or if that is missing, the driver's "
+                             "config/probes/crosstalk_<configuration>.yaml)" % os.path.normpath(DEFAULT_CONFIGURATIONS_H))
     parser.add_argument('--rate', type=float, default=50.0, help='data cycles per second (default: %(default)s)')
     parser.add_argument('--log', help='write the stream layout and commands here instead of printing them')
     args = parser.parse_args()
 
-    channels = enabled_channels(os.path.normpath(args.configurations_h), names.index(args.configuration))
+    configurations_h = os.path.normpath(args.configurations_h or DEFAULT_CONFIGURATIONS_H)
+    if args.configurations_h or os.path.exists(configurations_h):
+        source = configurations_h
+        channels = enabled_channels(configurations_h, names.index(args.configuration))
+    else:
+        source = os.path.normpath(os.path.join(CROSSTALK_DIR, 'crosstalk_%s.yaml' % args.configuration))
+        channels = crosstalk_channels(source)
     words = [((1000 + pos) << 16) | (pos + 1) for pos in range(len(channels))]
     payload = struct.pack('<%di' % DATA_WORDS, *(words + [0] * (DATA_WORDS - len(words))))
 
@@ -70,6 +105,7 @@ def main():
         log.write(line + '\n')
         log.flush()
 
+    write('channels from %s' % source)
     # Time slot, input and frequency, one based
     write('stream %s' % ';'.join('%d,%d,%d' % (t + 1, i + 1, f + 1) for t, i, f in channels))
 

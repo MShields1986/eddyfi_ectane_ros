@@ -1,3 +1,5 @@
+[![docker_ci](https://github.com/MShields1986/eddyfi_ectane_ros/actions/workflows/industrial_ci_action.yml/badge.svg)](https://github.com/MShields1986/eddyfi_ectane_ros/actions/workflows/industrial_ci_action.yml)
+
 # eddyfi_ectane_ros
 ROS 2 driver for use with the Eddyfi Ectane SDK ([video of it in use](https://vimeo.com/1123786342)), targeting ROS 2 Lyrical Luth on Ubuntu 26.04. The ROS 2 Jazzy Jalisco and Humble Hawksbill drivers are on the `jazzy` and `humble` branches, and the ROS 1 Noetic driver is on the `noetic` branch.
 
@@ -29,6 +31,11 @@ source install/setup.bash
 ```
 The socket classes come from [boost_asio_socket_wrappers](https://github.com/MShields1986/boost_asio_socket_wrappers), which CMake clones at a pinned commit when the package is first configured, so that needs network access.
 
+Or build it in Docker, and run the driver on the host's network so the C SDK can reach it:
+```bash
+docker compose -f docker/docker-compose.yaml run --rm eddyfi-ectane ros2 launch eddyfi_ectane init.launch.py configuration:=lf_probe_axial_and_transversal_1_channel
+```
+
 
 ## Usage
 Start the driver, then the C SDK from [eddyfi_ectane_sdk_ros](https://github.com/MShields1986/eddyfi_ectane_sdk_ros), which connects to the driver on start up:
@@ -55,7 +62,7 @@ To run the driver without an Ectane, start `eddyfi_ectane/scripts/fake_sdk.py` w
 ```bash
 python3 eddyfi_ectane/scripts/fake_sdk.py lf_probe_axial_and_transversal_1_channel
 ```
-It streams the channels the configuration enables in the C SDK's `Configurations.h`, read from `eddyfi_ectane_sdk_ros` alongside this repository or from `--configurations-h`, and prints the commands it receives. The values are not eddy current signals, but each one encodes the channel it came from.
+It streams the channels the configuration enables in the C SDK's `Configurations.h`, read from `eddyfi_ectane_sdk_ros` alongside this repository or from `--configurations-h`, or without the C SDK, the channels in the configuration's `config/probes/crosstalk_<configuration>.yaml`. It prints the commands it receives. The values are not eddy current signals, but each one encodes the channel it came from.
 
 
 ## Multi-frequency acquisition
@@ -78,6 +85,21 @@ Crosstalk channels for these configurations are named `F<n><coil>`, e.g. `F2A05`
 `/ectane/eddy_current_data` carries every channel, with each channel's `frequency` set to its excitation frequency.
 
 `init.launch.py` opens `rviz/config_multi_frequency.rviz` for multi-frequency configurations, with a display group per frequency. Only frequency 1 is enabled initially, as the frequencies overlap.
+
+
+## Tests
+The tests in `eddyfi_ectane/test` run the driver against `fake_sdk.py`:
+- `pipeline_test.sh` checks that every channel of the observations and point clouds holds the data streamed for it, and that Ctrl-C disconnects from the SDK
+- `shutdown_test.sh` checks that the driver shuts down promptly when data stops arriving
+- `failure_test.sh` checks that bad settings stop the driver with an error
+- `recording_test.sh` checks that `logging:=true` records a bag
+
+`./test.sh` builds the Docker image in `docker/` and runs them all in it, as GitHub Actions does on every push. To run one in a built workspace instead:
+```bash
+source install/setup.bash
+src/eddyfi_ectane_ros/eddyfi_ectane/test/pipeline_test.sh hf_probe_axial_and_transversal_4_channels 4
+```
+`eddyfi_ectane/test/run_all.sh` lists every case.
 
 
 ## TODO
