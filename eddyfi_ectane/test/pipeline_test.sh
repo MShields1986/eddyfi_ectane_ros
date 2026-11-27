@@ -11,6 +11,8 @@ echo "logs in $OUT"
 SETTINGS=$SHARE/config/$([ "$CONFIG" = example ] && echo simulated_ectane_mode.yaml || echo settings.yaml)
 
 python3 "$FAKE_SDK" "$CONFIG" --log "$OUT/fake_sdk.log" > "$OUT/fake_sdk.out" 2>&1 & PIDS+=($!)
+# The checker reads the stream from the fake SDK's log, which it writes first
+for _ in $(seq 60); do grep -q '^stream ' "$OUT/fake_sdk.log" 2>/dev/null && break; sleep 0.5; done
 ros2 launch eddyfi_ectane init.launch.py configuration:="$CONFIG" no_robot_mode:=true rviz:=false \
     reconstruction:=$([ "$MODE" = composed ] && echo true || echo false) > "$OUT/init.log" 2>&1 & PIDS+=($!)
 LAUNCHES=($!)
