@@ -1,0 +1,32 @@
+name: eddyfi-ectane
+
+services:
+  eddyfi-ectane:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: base
+      args:
+        - ROS2_WORKSPACE_DIR=${ROS2_WORKSPACE_DIR}
+    # On the host's network, for the C SDK to reach the driver
+    network_mode: host
+    ipc: host
+    environment:
+      - DISPLAY
+      - 'ROS_DOMAIN_ID=${ROS_DOMAIN_ID}'
+    volumes:
+      - ${XAUTHORITY:-/dev/null}:/root/.Xauthority:ro
+    command: ros2 launch eddyfi_ectane init.launch.py
+
+  test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: test
+      args:
+        - ROS2_WORKSPACE_DIR=${ROS2_WORKSPACE_DIR}
+    # On its own network, as the tests use the driver's ports, so cannot meet a driver or robot on the host
+    init: true
+    command: ${ROS2_WORKSPACE_DIR}/src/eddyfi_ectane_ros/eddyfi_ectane/test/run_all.sh
+    profiles:
+      - test
