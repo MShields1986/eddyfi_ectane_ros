@@ -41,13 +41,22 @@ void EctaneHandler::setup(
 }
 
 
-std::vector<int> EctaneHandler::readData() {
-    return receiver_.receive();
+std::optional<std::vector<int>> EctaneHandler::readData() {
+    // Received straight into the data cycle, which is then trimmed to the words that arrived
+    std::vector<int> data(kDataCycleWords);
+    const std::optional<std::size_t> bytes = receiver_.receive(boost::asio::buffer(data));
+
+    if (!bytes) {
+        return std::nullopt;
+    }
+
+    data.resize(*bytes / sizeof(int));
+    return data;
 }
 
 
-void EctaneHandler::interruptReadData() {
-    receiver_.interrupt();
+void EctaneHandler::cancelReadData() {
+    receiver_.cancel();
 }
 
 

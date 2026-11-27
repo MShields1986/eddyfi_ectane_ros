@@ -143,7 +143,7 @@ void EctaneNode::shutdown() {
 
         stopping_ = true;
         if (acquisition_thread_.joinable()) {
-            ectane_handler_->interruptReadData();
+            ectane_handler_->cancelReadData();
             acquisition_thread_.join();
         }
 
@@ -339,18 +339,20 @@ void EctaneNode::acquisitionLoop() {
 
         RCLCPP_INFO_STREAM_THROTTLE(get_logger(), *get_clock(), 60000, "Streaming data...");
 
+        std::optional<std::vector<int>> data;
         try {
-            ec_data_raw_ = ectane_handler_->readData();
+            data = ectane_handler_->readData();
         } catch (const std::exception& e) {
             RCLCPP_WARN_STREAM_THROTTLE(get_logger(), *get_clock(), 10000, "Data read failed: " << e.what());
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             continue;
         }
 
-        // Woken by the destructor rather than by data
-        if (stopping_) {
+        // Only cancelled by shutdown, which may also have begun as data arrived
+        if (!data || stopping_) {
             break;
         }
+        ec_data_raw_ = std::move(*data);
 
         // Published by moving, so composed subscribers in the same container receive it without a copy
         auto observation = std::make_unique<eddyfi_ectane::msg::Observation>(observation_template_);
