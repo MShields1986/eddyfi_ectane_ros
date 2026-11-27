@@ -21,6 +21,10 @@ constexpr int kCommandPacketFrequencies = 8;
 // The Ectane supports up to 5 frequencies per time slot (inst_MAX_NUM_OF_FREQUENCY_PER_TS in InstDefsEctIris.h)
 constexpr int kMaxFrequencies = 5;
 
+// Words in each data cycle the C SDK sends, its data array in hostdemo.c of 32 time slots by 8 inputs by 5
+// frequencies. The encoder, saturation and misc data are not forwarded.
+constexpr int kDataCycleWords = 32 * 8 * kMaxFrequencies;
+
 struct CommandPacket {
     enum State state;
     char ip_address[22];

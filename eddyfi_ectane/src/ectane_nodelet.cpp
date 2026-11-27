@@ -134,7 +134,7 @@ EctaneNodelet::~EctaneNodelet() {
 
     stopping_ = true;
     if (acquisition_thread_.joinable()) {
-        ectane_handler_.interruptReadData();
+        ectane_handler_.cancelReadData();
         acquisition_thread_.join();
     }
 
@@ -405,18 +405,20 @@ void EctaneNodelet::acquisitionLoop() {
 
         NODELET_INFO_STREAM_THROTTLE(60, node_name_ << ": Streaming data...");
 
+        std::optional<std::vector<int>> data;
         try {
-            ec_data_raw_ = ectane_handler_.readData();
+            data = ectane_handler_.readData();
         } catch (const std::exception& e) {
             NODELET_WARN_STREAM_THROTTLE(10, node_name_ << ": Data read failed: " << e.what());
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             continue;
         }
 
-        // Woken by the destructor rather than by data
-        if (stopping_) {
+        // Only cancelled by the destructor, which may also have begun as data arrived
+        if (!data || stopping_) {
             break;
         }
+        ec_data_raw_ = std::move(*data);
 
         ec_data_.header.stamp = ros::Time::now();
 

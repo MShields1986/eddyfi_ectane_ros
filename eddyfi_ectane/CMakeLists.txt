@@ -66,6 +66,15 @@ endif(ENABLE_CPPCHECK)
 find_package(Boost 1.71.0 REQUIRED COMPONENTS system)
 find_package(Threads REQUIRED)
 
+# Socket classes for the C SDK's connections, pinned to a release so the build cannot change underneath the driver
+include(FetchContent)
+FetchContent_Declare(
+  simple_boost_asio_sockets
+  GIT_REPOSITORY https://github.com/MShields1986/boost_asio_socket_wrappers
+  GIT_TAG        v0.1.0
+)
+FetchContent_MakeAvailable(simple_boost_asio_sockets)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   nodelet
@@ -218,8 +227,6 @@ include_directories(
 
 add_library(
   ${PROJECT_NAME}_nodelets
-  src/tcp_server_boost.cpp
-  src/udp_client_boost.cpp
   src/ectane_handler.cpp
   src/ectane_nodelet.cpp
   src/ec_data_to_pointcloud_nodelet.cpp
@@ -231,6 +238,7 @@ target_link_libraries(${PROJECT_NAME}_nodelets
   ${catkin_LIBRARIES}
   Boost::system
   Threads::Threads
+  BoostSocketWrappers
   )
 
 ###############
@@ -239,8 +247,6 @@ target_link_libraries(${PROJECT_NAME}_nodelets
 
 set(OTHER_SRC_FILES
      src/ectane_handler.cpp
-     src/tcp_server_boost.cpp
-     src/udp_client_boost.cpp
      # src/tcp_client.cpp
      # src/tcp_server.cpp
      # src/udp_connection.cpp
@@ -251,7 +257,7 @@ set(EXECUTABLE_SRC src/ectane_node.cpp)
 
 add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SRC} ${OTHER_SRC_FILES})
 add_dependencies(${EXECUTABLE_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES})
+target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES} BoostSocketWrappers)
 # target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES} MinimalSocket)
 
 if(ENABLE_CLANGTIDY)

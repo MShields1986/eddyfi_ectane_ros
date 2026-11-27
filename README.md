@@ -19,6 +19,24 @@ If you use this repository for your research, please cite the following conferen
     }
 
 
+## Build
+Clone into a catkin workspace and build:
+```bash
+cd ~/catkin_ws/src
+git clone -b noetic https://github.com/MShields1986/eddyfi_ectane_ros.git
+cd ~/catkin_ws
+rosdep install --from-paths src --ignore-src -y
+catkin_make
+source devel/setup.bash
+```
+The socket classes come from [boost_asio_socket_wrappers](https://github.com/MShields1986/boost_asio_socket_wrappers), which CMake clones at a pinned release when the package is first configured, so that needs network access.
+
+Or build it in Docker, and run the driver on the host's network so the C SDK can reach it:
+```bash
+docker compose -f docker/docker-compose.yaml run --rm eddyfi-ectane roslaunch eddyfi_ectane init.launch configuration:=lf_probe_axial_and_transversal_1_channel
+```
+
+
 ## Multi-frequency acquisition
 The `hf_probe_axial_and_transversal_4_channels` and `lf_probe_axial_and_transversal_4_channels` configurations acquire four frequencies in a single pass. The excitation for each frequency is set in `eddyfi_ectane/config/settings.yaml`:
 ```yaml
