@@ -1,0 +1,10 @@
+<launch>
+  <!-- A four frequency configuration with only two frequencies set, for failure_test.sh -->
+  <include file="$(find eddyfi_ectane)/launch/init.launch">
+    <arg name="configuration" value="hf_probe_axial_and_transversal_4_channels"/>
+    <arg name="no_robot_mode" value="true"/>
+    <arg name="rviz" value="false"/>
+  </include>
+  <rosparam param="/ectane/settings/frequencies">[5000, 10000]</rosparam>
+  <rosparam param="/ectane/settings/voltages">[7, 7]</rosparam>
+</launch>

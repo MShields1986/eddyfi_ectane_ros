@@ -1,0 +1,36 @@
+name: eddyfi-ectane
+
+services:
+  eddyfi-ectane:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: base
+      args:
+        - CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}
+    # On the host's network, for the C SDK to reach the driver
+    network_mode: host
+    ipc: host
+    environment:
+      - DISPLAY
+      - 'DISABLE_ROS1_EOL_WARNINGS=${DISABLE_ROS1_EOL_WARNINGS}'
+      - 'ROS_MASTER_URI=${ROS_MASTER_URI}'
+      - 'ROS_HOSTNAME=${ROS_HOSTNAME}'
+    volumes:
+      - ${XAUTHORITY:-/dev/null}:/root/.Xauthority:ro
+    command: roslaunch eddyfi_ectane init.launch
+
+  test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: test
+      args:
+        - CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}
+    # On its own network, as the tests use the driver's ports, so cannot meet a driver or robot on the host
+    init: true
+    environment:
+      - 'DISABLE_ROS1_EOL_WARNINGS=${DISABLE_ROS1_EOL_WARNINGS}'
+    command: ${CATKIN_WORKSPACE_DIR}/src/eddyfi_ectane_ros/eddyfi_ectane/test/run_all.sh
+    profiles:
+      - test
