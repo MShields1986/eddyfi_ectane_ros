@@ -59,6 +59,15 @@ find_package(tf2_sensor_msgs REQUIRED)
 find_package(Boost REQUIRED CONFIG)
 find_package(Threads REQUIRED)
 
+# Socket classes for the C SDK's connections, pinned to a commit so the build cannot change underneath the driver
+include(FetchContent)
+FetchContent_Declare(
+  simple_boost_asio_sockets
+  GIT_REPOSITORY https://github.com/MShields1986/boost_asio_socket_wrappers
+  GIT_TAG        364cd5ded006d302ab6c1b99e06febf81595f361
+)
+FetchContent_MakeAvailable(simple_boost_asio_sockets)
+
 ################################################
 ##          Messages and Services             ##
 ################################################
@@ -82,8 +91,6 @@ rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} rosidl_type
 # Components replace the ROS 1 nodelets. Each one can be loaded into a component container,
 # or run on its own with the executable registered for it below.
 add_library(${PROJECT_NAME}_components SHARED
-  src/tcp_server_boost.cpp
-  src/udp_client_boost.cpp
   src/ectane_handler.cpp
   src/ectane_node.cpp
   src/ec_data_to_pointcloud_node.cpp
@@ -104,6 +111,7 @@ target_link_libraries(${PROJECT_NAME}_components
   tf2_sensor_msgs::tf2_sensor_msgs
   Boost::headers
   Threads::Threads
+  BoostSocketWrappers
 )
 
 if(ENABLE_CLANGTIDY)

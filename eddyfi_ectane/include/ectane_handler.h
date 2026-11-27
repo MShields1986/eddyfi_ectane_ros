@@ -1,14 +1,16 @@
 #pragma once
 
 #include <iostream>
+#include <optional>
 #include <string>
 #include <cstring>
 #include <thread>
 #include <vector>
 
+#include <BoostSocketWrappers/tcp_server_boost.h>
+#include <BoostSocketWrappers/udp_client_boost.h>
+
 #include "c_sdk_data_structures.h"
-#include "udp_client_boost.h"
-#include "tcp_server_boost.h"
 
 //#include <MinimalSocket/udp/UdpSocket.h>
 //#include "tcp_server.h"
@@ -28,10 +30,11 @@ public:
                                           );
 
 
-    // Blocks until the C SDK sends a data cycle, throws on a socket error
-    std::vector<int>                readData();
-    // Makes a readData() blocked in another thread return
-    void                            interruptReadData();
+    // Blocks until the C SDK sends a data cycle and returns the words received, or returns std::nullopt once
+    // cancelReadData() is called. Throws on a socket error.
+    std::optional<std::vector<int>> readData();
+    // Makes a readData() blocked in another thread return std::nullopt, or the next one if none is waiting
+    void                            cancelReadData();
 
     void                            doNothing();
     void                            commandSocketInitialise();
@@ -56,14 +59,14 @@ private:
     int                             receive_port_;
     //TcpServer                       receiver_;
     //TcpServerBoost                  receiver_;
-    UdpClientBoost                  receiver_;
+    BoostSocketWrappers::UdpClientBoost receiver_;
 
     // C SDK State Command Listener
     std::string                     recipient_address_;
     //MinimalSocket::Port             send_port_;
     int                             send_port_;
     //TcpServer                       sender_;
-    TcpServerBoost                  sender_;
+    BoostSocketWrappers::TcpServerBoost sender_;
 
     // Internal Representation of Command State
     State                           state_;
